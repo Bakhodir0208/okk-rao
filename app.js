@@ -21,12 +21,15 @@ const STORAGE_KEYS = {
 // uz — грамотный перевод на узбекский язык для интерфейса
 const PROBLEMS_CATALOG = [
   { ru: 'Протечка жидкости', uz: 'Суюқлик оқиши', icon: '💧' },
+  { ru: 'Порвана мягкая упаковка (пакет)', uz: 'Юмшоқ қадоқ йиртилган (пакет)', icon: '🛍️' },
   { ru: 'Порвана упаковка (пакет)', uz: 'Пакет қадоғи йиртилган', icon: '🛍️' },
   { ru: 'Нет товарного вида', uz: 'Товарлик кўриниши йўқ', icon: '📦' },
+  { ru: 'Товар сломан, деформирован', uz: 'Маҳсулот синган, деформацияланган', icon: '🔨' },
   { ru: 'Товар сломан', uz: 'Маҳсулот синган', icon: '🔨' },
   { ru: 'Порвана упаковка (коробка)', uz: 'Қути қадоғи йиртилган', icon: '📦' },
   { ru: 'Помята упаковка (коробка)', uz: 'Қути қадоғи эзилган', icon: '📦' },
   { ru: 'Скол, вмятина, трещина', uz: 'Учган, эзилган, ёриқ', icon: '💥' },
+  { ru: 'Разбит хрупкий товар', uz: 'Синган, мўрт маҳсулот', icon: '🍷' },
   { ru: 'Разбит стеклянный товар', uz: 'Шиша маҳсулот синган', icon: '🍷' },
   { ru: 'Некомплект', uz: 'Тўлиқ эмас (кам-кўст)', icon: '🧩' },
   { ru: 'Грязный товар', uz: 'Маҳсулот ифлосланган', icon: '🧼' },
@@ -34,7 +37,11 @@ const PROBLEMS_CATALOG = [
   { ru: 'Дефект одежды', uz: 'Кийим нуқсони', icon: '👕' },
   { ru: 'Пустая упаковка', uz: 'Бўш қадоқ', icon: '📭' },
   { ru: 'Личная гигиена упаковка', uz: 'Шахсий гигиена қадоғи', icon: '🧴' },
-  { ru: 'Испорчен другим товаром', uz: 'Бошқа маҳсулотдан зарарланган', icon: '☣️' }
+  { ru: 'Испорчен другим товаром', uz: 'Бошқа маҳсулотдан зарарланган', icon: '☣️' },
+  { ru: 'Упаковка вскрыта/ нарушена пломба', uz: 'Қадоқ очилган / пломба бузилган', icon: '🔓' },
+  { ru: 'Упаковка вскрыта/нарушена пломба', uz: 'Қадоқ очилган / пломба бузилган', icon: '🔓' },
+  { ru: 'Мокрая упаковка, имеет следы влаги', uz: 'Ҳўл қадоқ, намлик излари бор', icon: '💧' },
+  { ru: 'Грязная упаковка', uz: 'Ифлосланган қадоқ', icon: '🧼' }
 ];
 
 const RU_TO_UZ_PROBLEMS_MAP = {};
@@ -160,21 +167,50 @@ function t(key, params = {}) {
 
 // Маппинг иконок для динамических причин
 const PROBLEM_ICON_MAP = {
-  'жидкости': '💧',
+  'жидкост': '💧',
   'пакет': '🛍️',
   'товарного': '📦',
+  'деформ': '🔨',
   'сломан': '🔨',
-  'коробка': '📦',
+  'коробк': '📦',
   'скол': '💥',
+  'вмятин': '💥',
+  'трещин': '💥',
+  'хрупк': '🍷',
   'стекл': '🍷',
   'некомплект': '🧩',
-  'грязный': '🧼',
-  'годности': '⏳',
-  'одежды': '👕',
+  'грязн': '🧼',
+  'годност': '⏳',
+  'одежд': '👕',
   'пустая': '📭',
-  'гигиена': '🧴',
-  'испорчен': '☣️'
+  'гигиен': '🧴',
+  'испорчен': '☣️',
+  'вскрыт': '🔓',
+  'пломб': '🔒',
+  'мокр': '💧',
+  'влаг': '💧'
 };
+
+function getClientTranslation(ruName) {
+  if (!ruName) return '';
+  const cleanRu = ruName.trim();
+  const lower = cleanRu.toLowerCase();
+
+  // 1. Проверяем словарь точных соответствий
+  if (RU_TO_UZ_PROBLEMS_MAP[lower]) {
+    return RU_TO_UZ_PROBLEMS_MAP[lower];
+  }
+
+  // 2. Умное распознавание по ключевым словам для складских формулировок
+  if (lower.includes('вскрыт') || lower.includes('пломб')) return 'Қадоқ очилган / пломба бузилган';
+  if (lower.includes('мокр') || lower.includes('влаг')) return 'Ҳўл қадоқ, намлик излари бор';
+  if (lower.includes('грязн') && (lower.includes('упаковк') || lower.includes('пакет') || lower.includes('коробк'))) return 'Ифлосланган қадоқ';
+  if (lower.includes('хрупк')) return 'Синган, мўрт маҳсулот';
+  if (lower.includes('деформ')) return 'Маҳсулот синган, деформацияланган';
+  if (lower.includes('мягкая упаковка')) return 'Юмшоқ қадоқ йиртилган (пакет)';
+
+  return cleanRu;
+}
 
 const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbwXDvJkSjzdBJQe8-ScYl3g0eWp7Qreb5ORleorg5vPrMFTfKk7RPT8kVWdRNgShHe8dw/exec';
 
@@ -1085,7 +1121,7 @@ function renderHistoryList() {
     const div = document.createElement('div');
     div.className = 'history-item';
     const reasonDisplay = (state.currentLang === 'uz')
-      ? (RU_TO_UZ_PROBLEMS_MAP[(item.problem || '').toLowerCase().trim()] || item.problemDisplay || item.problem)
+      ? (RU_TO_UZ_PROBLEMS_MAP[(item.problem || '').toLowerCase().trim()] || getClientTranslation(item.problem) || item.problemDisplay || item.problem)
       : (item.problem || item.problemDisplay);
 
     div.innerHTML = `
@@ -1115,19 +1151,24 @@ function fetchDynamicConfig() {
     .then(res => res.json())
     .then(res => {
       if (res.success && Array.isArray(res.problems) && res.problems.length > 0) {
-        state.problemsList = res.problems.map(name => {
+        state.problemsList = res.problems.map(item => {
+          const cleanRu = (typeof item === 'object' && item.ru) ? item.ru.trim() : String(item).trim();
+          let uzTranslation = (typeof item === 'object' && item.uz) ? item.uz.trim() : '';
+          if (!uzTranslation || uzTranslation === cleanRu) {
+            uzTranslation = getClientTranslation(cleanRu);
+          }
+
           let icon = '📦';
           for (const [key, ic] of Object.entries(PROBLEM_ICON_MAP)) {
-            if (name.toLowerCase().includes(key)) {
+            if (cleanRu.toLowerCase().includes(key)) {
               icon = ic;
               break;
             }
           }
-          const cleanRu = name.trim();
-          const uzTranslation = RU_TO_UZ_PROBLEMS_MAP[cleanRu.toLowerCase()] || cleanRu;
+
           return {
             ru: cleanRu,
-            uz: uzTranslation,
+            uz: uzTranslation || cleanRu,
             icon: icon
           };
         });

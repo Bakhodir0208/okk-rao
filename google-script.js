@@ -77,16 +77,20 @@ function handleRequest(e) {
         };
       }
 
-    // 2. ПОЛУЧЕНИЕ НАСТРОЕК (ПРИЧИНЫ ПРОБЛЕМ)
+    // 2. ПОЛУЧЕНИЕ НАСТРОЕК (ПРИЧИНЫ ПРОБЛЕМ С АВТОПЕРЕВОДОМ НА УЗБЕКСКИЙ КИРИЛЛИЦУ)
     } else if (action === "getConfig") {
       var configSheet = ss.getSheetByName("Config");
       var configData = configSheet ? configSheet.getDataRange().getValues() : [];
       var problems = [];
 
       for (var p = 1; p < configData.length; p++) {
-        var reason = String(configData[p][0] || "").trim();
-        if (reason) {
-          problems.push(reason);
+        var reasonRu = String(configData[p][0] || "").trim();
+        if (reasonRu) {
+          var reasonUz = getUzbekTranslation(reasonRu);
+          problems.push({
+            ru: reasonRu,
+            uz: reasonUz
+          });
         }
       }
 
@@ -318,4 +322,121 @@ function setupSheet() {
       ss.deleteSheet(defaultSheet);
     } catch (e) {}
   }
+}
+
+// ═══════════════════════════════════════════
+//  АВТОМАТИЧЕСКИЙ ПЕРЕВОД НА УЗБЕКСКИЙ (КИРИЛЛИЦА)
+// ═══════════════════════════════════════════
+
+var CURATED_TRANSLATIONS = {
+  "протечка жидкости": "Суюқлик оқиши",
+  "порвана мягкая упаковка (пакет)": "Юмшоқ қадоқ йиртилган (пакет)",
+  "порвана упаковка (пакет)": "Пакет қадоғи йиртилган",
+  "нет товарного вида": "Товарлик кўриниши йўқ",
+  "товар сломан, деформирован": "Маҳсулот синган, деформацияланган",
+  "товар сломан": "Маҳсулот синган",
+  "порвана упаковка (коробка)": "Қути қадоғи йиртилган",
+  "помята упаковка (коробка)": "Қути қадоғи эзилган",
+  "скол, вмятина, трещина": "Учган, эзилган, ёриқ",
+  "разбит хрупкий товар": "Синган, мўрт маҳсулот",
+  "разбит стеклянный товар": "Шиша маҳсулот синган",
+  "некомплект": "Тўлиқ эмас (кам-кўст)",
+  "грязный товар": "Маҳсулот ифлосланган",
+  "срок годности": "Яроқлилик муддати ўтган",
+  "дефект одежды": "Кийим нуқсони",
+  "пустая упаковка": "Бўш қадоқ",
+  "личная гигиена упаковка": "Шахсий гигиена қадоғи",
+  "испорчен другим товаром": "Бошқа маҳсулотдан зарарланган",
+  "упаковка вскрыта/ нарушена пломба": "Қадоқ очилган / пломба бузилган",
+  "упаковка вскрыта/нарушена пломба": "Қадоқ очилган / пломба бузилган",
+  "мокрая упаковка, имеет следы влаги": "Ҳўл қадоқ, намлик излари бор",
+  "грязная упаковка": "Ифлосланган қадоқ"
+};
+
+function getUzbekTranslation(textRu) {
+  if (!textRu) return "";
+  var clean = textRu.trim();
+  var lower = clean.toLowerCase();
+
+  // 1. Проверяем эталонный складской словарь
+  if (CURATED_TRANSLATIONS[lower]) {
+    return CURATED_TRANSLATIONS[lower];
+  }
+
+  // 2. Проверяем кэш скрипта (CacheService)
+  var cacheKey = "tr_" + Utilities.base64Encode(Utilities.newBlob(lower).getBytes()).substring(0, 40);
+  try {
+    var cached = CacheService.getScriptCache().get(cacheKey);
+    if (cached) return cached;
+  } catch (e) {}
+
+  // 3. АВТОПЕРЕВОД через встроенный сервис Google Apps Script (LanguageApp)
+  var uzCyrillic = clean;
+  try {
+    var translatedLatin = LanguageApp.translate(clean, "ru", "uz");
+    uzCyrillic = latinToUzbekCyrillic(translatedLatin);
+
+    // Сохраняем в кэш на 6 часов
+    try {
+      CacheService.getScriptCache().put(cacheKey, uzCyrillic, 21600);
+    } catch (e) {}
+  } catch (err) {
+    uzCyrillic = clean;
+  }
+
+  return uzCyrillic;
+}
+
+function latinToUzbekCyrillic(text) {
+  if (!text) return "";
+  var res = text;
+  
+  var compounds = [
+    ["o'", "ў"], ["oʻ", "ў"], ["o`", "ў"], ["O'", "Ў"], ["Oʻ", "Ў"], ["O`", "Ў"],
+    ["g'", "ғ"], ["gʻ", "ғ"], ["g`", "ғ"], ["G'", "Ғ"], ["Gʻ", "Ғ"], ["G`", "Ғ"],
+    ["sh", "ш"], ["Sh", "Ш"], ["SH", "Ш"],
+    ["ch", "ч"], ["Ch", "Ч"], ["CH", "Ч"],
+    ["yo", "ё"], ["Yo", "Ё"], ["YO", "Ё"],
+    ["yu", "ю"], ["Yu", "Ю"], ["YU", "Ю"],
+    ["ya", "я"], ["Ya", "Я"], ["YA", "Я"],
+    ["ye", "е"], ["Ye", "Е"], ["YE", "Е"]
+  ];
+  for (var c = 0; c < compounds.length; c++) {
+    res = res.split(compounds[c][0]).join(compounds[c][1]);
+  }
+
+  var singleMap = {
+    'a': 'а', 'A': 'А',
+    'b': 'б', 'B': 'Б',
+    'd': 'д', 'D': 'Д',
+    'e': 'е', 'E': 'Е',
+    'f': 'ф', 'F': 'Ф',
+    'g': 'г', 'G': 'Г',
+    'h': 'ҳ', 'H': 'Ҳ',
+    'i': 'и', 'I': 'И',
+    'j': 'ж', 'J': 'Ж',
+    'k': 'к', 'K': 'К',
+    'l': 'л', 'L': 'Л',
+    'm': 'м', 'M': 'М',
+    'n': 'н', 'N': 'Н',
+    'o': 'о', 'O': 'О',
+    'p': 'п', 'P': 'П',
+    'q': 'қ', 'Q': 'Қ',
+    'r': 'р', 'R': 'Р',
+    's': 'с', 'S': 'С',
+    't': 'т', 'T': 'Т',
+    'u': 'у', 'U': 'У',
+    'v': 'в', 'V': 'В',
+    'x': 'х', 'X': 'Х',
+    'y': 'й', 'Y': 'Й',
+    'z': 'з', 'Z': 'З',
+    "'": 'ъ', "ʻ": 'ъ', "`": 'ъ'
+  };
+
+  var out = "";
+  for (var i = 0; i < res.length; i++) {
+    var ch = res.charAt(i);
+    out += singleMap[ch] || ch;
+  }
+  return out;
 }
