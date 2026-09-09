@@ -96,7 +96,7 @@ const I18N = {
     savedSettings: 'Настройки URL сохранены!'
   },
   uz: {
-    brandBadge: 'СНБ • Сифат назорати • РАО',
+    brandBadge: 'ОКК • Сифат назорати • РАО',
     authHeading: 'РАО қайд этиш',
     employeeIdLabel: 'Ходимнинг wms_id рақами',
     employeeIdPlaceholder: 'Масалан: 1001',
