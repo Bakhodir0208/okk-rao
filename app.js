@@ -694,10 +694,10 @@ function submitProblemRecord(record) {
     sortingWall: record.sortingWall,
     cargoPlace: record.cargoPlace,
     barcode: record.barcode,
-    description: '',         // Колонка 9 под Python / формулы
-    category1: '',           // Колонка 10
-    category2: '',           // Колонка 11
-    compensationPrice: '',   // Колонка 12
+    description: '',         // Колонка 9: Описание
+    category1: '',           // Колонка 10: Категория 1
+    category2: '',           // Колонка 11: Категория 2
+    compensationPrice: '',   // Колонка 12: Цена компенсации
     problem: record.problem, // Колонка 13
     qty: record.qty          // Колонка 14
   };
