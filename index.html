@@ -20,8 +20,19 @@
     <!-- ПЛАВАЮЩИЕ КОНТРОЛЫ (ВЕРХНИЙ ПРАВЫЙ УГОЛ) -->
     <aside class="top-controls-bar" aria-label="Панель быстрых настроек">
       <div id="offlineBadge" class="offline-badge" title="Офлайн-режим. Записи сохраняются локально">
-        <span>⚡</span> <span id="offlineCount">0</span> в очереди
+        <span>⚡</span> <span id="offlineCount">0</span> <span id="offlineQueueText" data-i18n="inQueue">в очереди</span>
       </div>
+
+      <!-- ЯЗЫКОВОЙ ПЕРЕКЛЮЧАТЕЛЬ С ФЛАЖКАМИ В ВЕРХНЕЙ ПАНЕЛИ -->
+      <div class="top-lang-switcher" role="group" aria-label="Тилни танлаш / Выбор языка">
+        <button type="button" class="top-lang-btn active" data-lang="ru" title="Русский">
+          <span>🇷🇺</span>
+        </button>
+        <button type="button" class="top-lang-btn" data-lang="uz" title="O'zbekcha">
+          <span>🇺🇿</span>
+        </button>
+      </div>
+
       <button id="soundToggleBtn" class="control-btn" type="button" title="Звук (вкл/выкл)" aria-label="Переключить звук">
         <span id="soundIcon">🔊</span>
       </button>
@@ -34,17 +45,27 @@
     <main id="authScreen" class="screen active">
       <section class="auth-wrapper" aria-labelledby="authHeading">
         <div class="card">
+          <!-- НАЧАЛЬНЫЙ ПЕРЕКЛЮЧАТЕЛЬ С ФЛАЖКАМИ НА ЭКРАНЕ ВХОДА -->
+          <div class="auth-lang-switcher" role="group" aria-label="Тилни танлаш / Выбор языка">
+            <button type="button" class="lang-pill-btn active" data-lang="ru">
+              <span class="flag">🇷🇺</span> <span>Русский</span>
+            </button>
+            <button type="button" class="lang-pill-btn" data-lang="uz">
+              <span class="flag">🇺🇿</span> <span>O'zbekcha</span>
+            </button>
+          </div>
+
           <header class="brand-header">
             <div class="brand-badge">
               <span class="dot"></span>
-              <span>ОКК • Контроль качества • РАО</span>
+              <span id="brandBadgeText" data-i18n="brandBadge">ОКК • Контроль качества • РАО</span>
             </div>
-            <h1 id="authHeading">Фиксация РАО</h1>
+            <h1 id="authHeading" data-i18n="authHeading">Фиксация РАО</h1>
           </header>
 
           <form id="authForm" novalidate>
             <div class="input-group">
-              <label for="employeeIdInput">wms_id сотрудника</label>
+              <label for="employeeIdInput" id="employeeIdLabel" data-i18n="employeeIdLabel">wms_id сотрудника</label>
               <div class="input-wrapper">
                 <input
                   type="text"
@@ -63,7 +84,7 @@
             </div>
 
             <button type="submit" id="authSubmitBtn" class="btn btn-primary btn-block">
-              <span>Войти в систему</span>
+              <span id="authSubmitText" data-i18n="authSubmitBtn">Войти в систему</span>
               <span>➜</span>
             </button>
           </form>
@@ -81,17 +102,17 @@
               <span>👤</span>
               <span id="wallUserName">Сотрудник: ...</span>
             </div>
-            <button id="logoutBtnFromWall" class="btn-text" type="button">Выйти</button>
+            <button id="logoutBtnFromWall" class="btn-text" type="button" data-i18n="logout">Выйти</button>
           </div>
 
           <!-- Анимированная зона сканера -->
           <div class="scanner-target-card" id="scannerTargetArea">
             <div class="scanner-laser-beam"></div>
             <div class="scanner-icon">🧱</div>
-            <h2 id="wallScanHeading">Сканируйте стену</h2>
-            <p>Отсканируйте штрих-код стены сортировки для привязки рабочего места</p>
+            <h2 id="wallScanHeading" data-i18n="wallHeading">Сканируйте стену</h2>
+            <p id="wallScanSubText" data-i18n="wallSub">Отсканируйте штрих-код стены сортировки для привязки рабочего места</p>
             <div class="scanner-mode-pill">
-              <span>⚡</span> Только сканер ШК (ручной ввод отключен)
+              <span>⚡</span> <span id="scannerModeText" data-i18n="scannerModeOnly">Только сканер ШК (ручной ввод отключен)</span>
             </div>
 
             <!-- Скрытое поле ввода для приема данных сканера -->
@@ -108,7 +129,7 @@
           <!-- Предупреждение при попытке ручного ввода -->
           <div id="manualInputNotice" class="manual-block-notice">
             <span>⚠️</span>
-            <span>Ручной ввод запрещен! Пожалуйста, используйте аппаратный сканер ШК.</span>
+            <span id="manualInputNoticeText" data-i18n="manualNotice">Ручной ввод запрещен! Пожалуйста, используйте аппаратный сканер ШК.</span>
           </div>
 
           <div id="wallScanError" class="error-text"></div>
@@ -128,7 +149,7 @@
               <span id="activeWallBadge" class="wall-text">Стена: ...</span>
             </div>
             <button id="changeWallBtn" class="btn-change-wall" type="button" title="Перейти к другой стене сортировки">
-              <span>🔄</span> Сменить стену
+              <span>🔄</span> <span id="changeWallBtnText" data-i18n="changeWall">Сменить стену</span>
             </button>
           </div>
           <div class="employee-badge">
@@ -143,7 +164,7 @@
           <!-- Поле: ШК Короба -->
           <div class="barcode-input-container">
             <div class="barcode-header">
-              <label for="cargoPlaceInput">ШК Короба</label>
+              <label for="cargoPlaceInput" id="cargoPlaceLabel" data-i18n="cargoPlaceLabel">ШК Короба</label>
             </div>
             <div class="input-wrapper">
               <input
@@ -184,8 +205,8 @@
           <!-- Блок количества -->
           <div class="qty-and-action-bar">
             <div class="qty-label-wrap">
-              <span class="title">Количество единиц</span>
-              <span class="hint">По умолчанию: 1 шт.</span>
+              <span class="title" id="qtyTitle" data-i18n="qtyTitle">Количество единиц</span>
+              <span class="hint" id="qtyHint" data-i18n="qtyHint">По умолчанию: 1 шт.</span>
             </div>
             <div class="qty-stepper">
               <button type="button" id="qtyMinusBtn" class="qty-btn" aria-label="Уменьшить на 1">–</button>
@@ -205,13 +226,13 @@
           <!-- Сетка выбора причины проблемы (15 кнопок) -->
           <div class="problems-section">
             <div class="problems-section-header">
-              <h3>Причина проблемы</h3>
-              <span class="tip">Выберите причину ⚡</span>
+              <h3 id="problemsSectionTitle" data-i18n="problemsTitle">Причина проблемы</h3>
+              <span class="tip" id="problemsSectionTip" data-i18n="problemsTip">Выберите причину ⚡</span>
             </div>
 
             <div id="problemsGrid" class="problems-grid">
               <!-- Карточки 15 причин будут сгенерированы скриптом -->
-              <div class="history-empty" style="grid-column: 1 / -1;">Загрузка причин проблем...</div>
+              <div class="history-empty" id="problemsLoadingText" style="grid-column: 1 / -1;">Загрузка причин проблем...</div>
             </div>
           </div>
 
@@ -226,12 +247,12 @@
         <!-- История последних записей -->
         <section class="history-section" aria-labelledby="historyHeading">
           <div class="history-header">
-            <h4 id="historyHeading">Последние фиксации сотрудника</h4>
+            <h4 id="historyHeading" data-i18n="historyHeading">Последние фиксации сотрудника</h4>
             <span id="historyCount" class="history-count">0 записей</span>
           </div>
 
           <div id="historyList" class="history-list">
-            <div class="history-empty">Здесь отобразятся отсканированные вами товары</div>
+            <div class="history-empty" id="historyEmptyText" data-i18n="historyEmpty">Здесь отобразятся отсканированные вами товары</div>
           </div>
         </section>
 
@@ -245,36 +266,36 @@
     <div class="modal-card">
       <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
         <span style="font-size: 24px;">📝</span>
-        <h3 id="confirmModalTitle" style="margin: 0;">Подтверждение</h3>
+        <h3 id="confirmModalTitle" data-i18n="confirmTitle" style="margin: 0;">Подтверждение</h3>
       </div>
-      <p style="margin-bottom: 16px;">Пожалуйста, проверьте правильность данных перед отправкой:</p>
+      <p id="confirmModalDesc" data-i18n="confirmDesc" style="margin-bottom: 16px;">Пожалуйста, проверьте правильность данных перед отправкой:</p>
 
       <div class="confirm-summary">
         <div class="confirm-row">
-          <span class="confirm-label">🧱 Стена сортировки:</span>
+          <span class="confirm-label" id="confirmWallLabel" data-i18n="confirmWall">🧱 Стена сортировки:</span>
           <span id="confirmWall" class="confirm-value">—</span>
         </div>
         <div class="confirm-row">
-          <span class="confirm-label">📦 ШК Короба:</span>
+          <span class="confirm-label" id="confirmBoxLabel" data-i18n="confirmBox">📦 ШК Короба:</span>
           <span id="confirmBox" class="confirm-value">—</span>
         </div>
         <div class="confirm-row">
-          <span class="confirm-label">🏷️ ШК Товара:</span>
+          <span class="confirm-label" id="confirmBarcodeLabel" data-i18n="confirmBarcode">🏷️ ШК Товара:</span>
           <span id="confirmBarcode" class="confirm-value" style="color: #ffffff; letter-spacing: 1px;">—</span>
         </div>
         <div class="confirm-row">
-          <span class="confirm-label">💥 Причина проблемы:</span>
+          <span class="confirm-label" id="confirmProblemLabel" data-i18n="confirmProblem">💥 Причина проблемы:</span>
           <span id="confirmProblem" class="confirm-value" style="color: var(--accent-color);">—</span>
         </div>
         <div class="confirm-row">
-          <span class="confirm-label">🔢 Количество:</span>
+          <span class="confirm-label" id="confirmQtyLabel" data-i18n="confirmQty">🔢 Количество:</span>
           <span id="confirmQty" class="confirm-value">1 шт.</span>
         </div>
       </div>
 
       <div class="modal-actions" style="display: flex; gap: 10px; margin-top: 20px;">
-        <button type="button" id="cancelConfirmBtn" class="btn btn-secondary" style="flex: 1;">Отмена</button>
-        <button type="button" id="submitConfirmBtn" class="btn btn-primary" style="flex: 1.4;">Отправить ➜</button>
+        <button type="button" id="cancelConfirmBtn" class="btn btn-secondary" style="flex: 1;" data-i18n="cancel">Отмена</button>
+        <button type="button" id="submitConfirmBtn" class="btn btn-primary" style="flex: 1.4;" data-i18n="send">Отправить ➜</button>
       </div>
     </div>
   </div>

@@ -12,26 +12,151 @@ const STORAGE_KEYS = {
   USER_SESSION: 'okk_rao_session',
   OFFLINE_QUEUE: 'okk_rao_offline_queue',
   LOCAL_HISTORY: 'okk_rao_history',
-  SOUND_ENABLED: 'okk_rao_sound_enabled'
+  SOUND_ENABLED: 'okk_rao_sound_enabled',
+  LANG: 'okk_rao_lang'
 };
 
-const DEFAULT_PROBLEMS = [
-  { name: 'Протечка жидкости', icon: '💧' },
-  { name: 'Порвана упаковка (пакет)', icon: '🛍️' },
-  { name: 'Нет товарного вида', icon: '📦' },
-  { name: 'Товар сломан', icon: '🔨' },
-  { name: 'Порвана упаковка (коробка)', icon: '📦' },
-  { name: 'Помята упаковка (коробка)', icon: '📦' },
-  { name: 'Скол, вмятина, трещина', icon: '💥' },
-  { name: 'Разбит стеклянный товар', icon: '🍷' },
-  { name: 'Некомплект', icon: '🧩' },
-  { name: 'Грязный товар', icon: '🧼' },
-  { name: 'Срок годности', icon: '⏳' },
-  { name: 'Дефект одежды', icon: '👕' },
-  { name: 'Пустая упаковка', icon: '📭' },
-  { name: 'Личная гигиена упаковка', icon: '🧴' },
-  { name: 'Испорчен другим товаром', icon: '☣️' }
+// Каталог из 15 причин проблем:
+// ru — каноническое название ДЛЯ GOOGLE ТАБЛИЦЫ (жестко на русском языке!)
+// uz — грамотный перевод на узбекский язык для интерфейса
+const PROBLEMS_CATALOG = [
+  { ru: 'Протечка жидкости', uz: 'Suyuqlik oqishi', icon: '💧' },
+  { ru: 'Порвана упаковка (пакет)', uz: 'Paket qadog\'i yirtilgan', icon: '🛍️' },
+  { ru: 'Нет товарного вида', uz: 'Tovarlik ko\'rinishi yo\'q', icon: '📦' },
+  { ru: 'Товар сломан', uz: 'Mahsulot singan', icon: '🔨' },
+  { ru: 'Порвана упаковка (коробка)', uz: 'Quti qadog\'i yirtilgan', icon: '📦' },
+  { ru: 'Помята упаковка (коробка)', uz: 'Quti qadog\'i ezilgan', icon: '📦' },
+  { ru: 'Скол, вмятина, трещина', uz: 'Uchgan, ezilgan, yoriq', icon: '💥' },
+  { ru: 'Разбит стеклянный товар', uz: 'Shisha mahsulot singan', icon: '🍷' },
+  { ru: 'Некомплект', uz: 'To\'liq emas (kam-ko\'st)', icon: '🧩' },
+  { ru: 'Грязный товар', uz: 'Mahsulot ifloslangan', icon: '🧼' },
+  { ru: 'Срок годности', uz: 'Yaroqlilik muddati o\'tgan', icon: '⏳' },
+  { ru: 'Дефект одежды', uz: 'Kiyim nuqsoni', icon: '👕' },
+  { ru: 'Пустая упаковка', uz: 'Bo\'sh qadoq', icon: '📭' },
+  { ru: 'Личная гигиена упаковка', uz: 'Shaxsiy gigiyena qadog\'i', icon: '🧴' },
+  { ru: 'Испорчен другим товаром', uz: 'Boshqa mahsulotdan zararlangan', icon: '☣️' }
 ];
+
+const RU_TO_UZ_PROBLEMS_MAP = {};
+PROBLEMS_CATALOG.forEach(p => {
+  RU_TO_UZ_PROBLEMS_MAP[p.ru.toLowerCase().trim()] = p.uz;
+});
+
+const I18N = {
+  ru: {
+    brandBadge: 'ОКК • Контроль качества • РАО',
+    authHeading: 'Фиксация РАО',
+    employeeIdLabel: 'wms_id сотрудника',
+    employeeIdPlaceholder: 'Например: 1001',
+    authSubmitBtn: 'Войти в систему',
+    checking: 'Проверка...',
+    userPrefix: 'Сотрудник:',
+    logout: 'Выйти',
+    wallHeading: 'Сканируйте стену',
+    wallSub: 'Отсканируйте штрих-код стены сортировки для привязки рабочего места',
+    scannerModeOnly: 'Только сканер ШК (ручной ввод отключен)',
+    wallPlaceholder: 'Ожидание сканирования стены...',
+    manualNotice: 'Ручной ввод запрещен! Пожалуйста, используйте аппаратный сканер ШК.',
+    wallPrefix: 'Стена:',
+    changeWall: 'Сменить стену',
+    shiftDay: 'День',
+    shiftNight: 'Ночь',
+    shiftDefault: 'Основная смена',
+    cargoPlaceLabel: 'ШК Короба',
+    cargoPlacePlaceholder: 'Отсканируйте ШК короба...',
+    itemBarcodeLabel: 'Штрих-код товара (13 цифр)',
+    itemBarcodePlaceholder: 'Отсканируйте ШК товара...',
+    qtyTitle: 'Количество единиц',
+    qtyHint: 'По умолчанию: 1 шт.',
+    problemsTitle: 'Причина проблемы',
+    problemsTip: 'Выберите причину ⚡',
+    problemsLoading: 'Загрузка причин проблем...',
+    historyHeading: 'Последние фиксации сотрудника',
+    historyEmpty: 'Здесь отобразятся отсканированные вами товары',
+    recordsSuffix: 'записей',
+    pcs: 'шт.',
+    boxPrefix: 'Короб:',
+    inQueue: 'в очереди',
+    confirmTitle: 'Подтверждение',
+    confirmDesc: 'Пожалуйста, проверьте правильность данных перед отправкой:',
+    confirmWall: '🧱 Стена сортировки:',
+    confirmBox: '📦 ШК Короба:',
+    confirmBarcode: '🏷️ ШК Товара:',
+    confirmProblem: '💥 Причина проблемы:',
+    confirmQty: '🔢 Количество:',
+    cancel: 'Отмена',
+    send: 'Отправить ➜',
+    enterWmsId: 'Введите wms_id сотрудника',
+    empNotFound: 'Сотрудник с wms_id «{id}» не найден в базе Employees',
+    scanBoxFirst: 'Сначала отсканируйте ШК короба!',
+    barcode13Err: 'Ошибка: Штрих-код должен содержать ровно 13 цифр!',
+    barcodeAccepted: 'ШК принят! Выберите причину проблемы ⚡',
+    readyToast: 'Готов к работе',
+    syncSuccess: '⚡ Синхронизировано {n} офлайн записей!',
+    savedSettings: 'Настройки URL сохранены!'
+  },
+  uz: {
+    brandBadge: 'SNB • Sifat nazorati • RAO',
+    authHeading: 'RAO qayd etish',
+    employeeIdLabel: 'Xodimning wms_id raqami',
+    employeeIdPlaceholder: 'Masalan: 1001',
+    authSubmitBtn: 'Tizimga kirish',
+    checking: 'Tekshirilmoqda...',
+    userPrefix: 'Xodim:',
+    logout: 'Chiqish',
+    wallHeading: 'Saralash devorini skanerlang',
+    wallSub: 'Ish joyini biriktirish uchun saralash devori shtrix-kodini skanerlang',
+    scannerModeOnly: 'Faqat Shtrix-kod skaneri (qo\'lda kiritish o\'chirilgan)',
+    wallPlaceholder: 'Devor skanerlanishi kutilmoqda...',
+    manualNotice: 'Qo\'lda kiritish taqiqlangan! Iltimos, apparat shtrix-kod skaneridan foydalaning.',
+    wallPrefix: 'Devor:',
+    changeWall: 'Devorni almashtirish',
+    shiftDay: 'Kun',
+    shiftNight: 'Tun',
+    shiftDefault: 'Asosiy smena',
+    cargoPlaceLabel: 'Quti shtrix-kodi',
+    cargoPlacePlaceholder: 'Quti shtrix-kodini skanerlang...',
+    itemBarcodeLabel: 'Mahsulot shtrix-kodi (13 raqam)',
+    itemBarcodePlaceholder: 'Mahsulot shtrix-kodini skanerlang...',
+    qtyTitle: 'Birliklar soni',
+    qtyHint: 'Standart: 1 dona',
+    problemsTitle: 'Muammo sababi',
+    problemsTip: 'Sababni tanlang ⚡',
+    problemsLoading: 'Muammo sabablari yuklanmoqda...',
+    historyHeading: 'Xodimning so\'nggi qaydlari',
+    historyEmpty: 'Bu yerda siz skanerlagan mahsulotlar ko\'rinadi',
+    recordsSuffix: 'ta yozuv',
+    pcs: 'dona',
+    boxPrefix: 'Quti:',
+    inQueue: 'navbatda',
+    confirmTitle: 'Tasdiqlash',
+    confirmDesc: 'Iltimos, yuborishdan oldin ma\'lumotlar to\'g\'riligini tekshiring:',
+    confirmWall: '🧱 Saralash devori:',
+    confirmBox: '📦 Quti shtrix-kodi:',
+    confirmBarcode: '🏷️ Mahsulot shtrix-kodi:',
+    confirmProblem: '💥 Muammo sababi:',
+    confirmQty: '🔢 Birliklar soni:',
+    cancel: 'Bekor qilish',
+    send: 'Yuborish ➜',
+    enterWmsId: 'Xodimning wms_id raqamini kiriting',
+    empNotFound: 'wms_id «{id}» bo\'lgan xodim Employees bazasidan topilmadi',
+    scanBoxFirst: 'Avval quti shtrix-kodini skanerlang!',
+    barcode13Err: 'Xatolik: Shtrix-kod aynan 13 ta raqamdan iborat bo\'lishi kerak!',
+    barcodeAccepted: 'Shtrix-kod qabul qilindi! Sababni tanlang ⚡',
+    readyToast: 'Ishga tayyor',
+    syncSuccess: '⚡ {n} ta oflayn yozuv sinxronlandi!',
+    savedSettings: 'URL sozlamalari saqlandi!'
+  }
+};
+
+function t(key, params = {}) {
+  const dict = I18N[state.currentLang] || I18N.ru;
+  let str = dict[key] || I18N.ru[key] || key;
+  for (const [k, v] of Object.entries(params)) {
+    str = str.replace(`{${k}}`, v);
+  }
+  return str;
+}
 
 // Маппинг иконок для динамических причин
 const PROBLEM_ICON_MAP = {
@@ -60,10 +185,11 @@ const state = {
   apiUrl: (localStorage.getItem(STORAGE_KEYS.API_URL) && localStorage.getItem(STORAGE_KEYS.API_URL).trim().startsWith('http'))
     ? localStorage.getItem(STORAGE_KEYS.API_URL).trim()
     : DEFAULT_API_URL,
+  currentLang: localStorage.getItem(STORAGE_KEYS.LANG) || 'ru',
   currentUser: null,
   currentWall: null,
   soundEnabled: localStorage.getItem(STORAGE_KEYS.SOUND_ENABLED) !== 'false',
-  problemsList: [...DEFAULT_PROBLEMS],
+  problemsList: [...PROBLEMS_CATALOG],
   offlineQueue: [],
   history: [],
   isSubmitting: false,
@@ -179,6 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
   cacheElements();
   loadSavedState();
   initSoundToggle();
+  initLanguage();
   setupEventListeners();
   renderProblemsGrid();
   updateOfflineQueueBadge();
@@ -186,6 +313,57 @@ document.addEventListener('DOMContentLoaded', () => {
   syncOfflineQueue();
   checkSession();
 });
+
+function initLanguage() {
+  setLanguage(state.currentLang);
+}
+
+function setLanguage(lang) {
+  state.currentLang = (lang === 'uz') ? 'uz' : 'ru';
+  localStorage.setItem(STORAGE_KEYS.LANG, state.currentLang);
+
+  // Переключение активного класса на кнопках
+  document.querySelectorAll('.top-lang-btn, .lang-pill-btn').forEach(btn => {
+    if (btn.getAttribute('data-lang') === state.currentLang) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  // Обновление статических элементов с data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const text = t(key);
+    if (text) el.textContent = text;
+  });
+
+  // Обновление плейсхолдеров
+  if (elements.employeeIdInput) elements.employeeIdInput.placeholder = t('employeeIdPlaceholder');
+  if (elements.wallBarcodeInput) elements.wallBarcodeInput.placeholder = t('wallPlaceholder');
+  if (elements.cargoPlaceInput) elements.cargoPlaceInput.placeholder = t('cargoPlacePlaceholder');
+  if (elements.itemBarcodeInput) elements.itemBarcodeInput.placeholder = t('itemBarcodePlaceholder');
+
+  // Динамические плашки
+  if (state.currentWall && elements.activeWallBadge) {
+    elements.activeWallBadge.textContent = `${t('wallPrefix')} ${state.currentWall}`;
+  }
+  if (state.currentUser) {
+    if (elements.wallUserName) {
+      elements.wallUserName.textContent = `${t('userPrefix')} ${state.currentUser.name || state.currentUser.id || '...'}`;
+    }
+    if (elements.workUserName) {
+      elements.workUserName.textContent = state.currentUser.name || `ID ${state.currentUser.id}`;
+    }
+    if (elements.workUserShift) {
+      elements.workUserShift.textContent = getLocalizedShiftName(state.currentUser.shift);
+    }
+  }
+
+  // Обновление кнопок причин проблем и истории
+  renderProblemsGrid();
+  renderHistoryList();
+}
 
 function cacheElements() {
   elements = {
@@ -271,15 +449,15 @@ function showScreen(screenName) {
     setTimeout(() => elements.employeeIdInput?.focus(), 150);
   } else if (screenName === 'wall') {
     elements.wallScanScreen.classList.add('active');
-    elements.wallUserName.textContent = `Сотрудник: ${state.currentUser?.name || state.currentUser?.id || '...'}`;
+    elements.wallUserName.textContent = `${t('userPrefix')} ${state.currentUser?.name || state.currentUser?.id || '...'}`;
     elements.wallBarcodeInput.value = '';
     hideManualNotice();
     setTimeout(() => elements.wallBarcodeInput?.focus(), 150);
   } else if (screenName === 'work') {
     elements.workScreen.classList.add('active');
-    elements.activeWallBadge.textContent = `Стена: ${state.currentWall}`;
+    elements.activeWallBadge.textContent = `${t('wallPrefix')} ${state.currentWall}`;
     elements.workUserName.textContent = state.currentUser?.name || `ID ${state.currentUser?.id}`;
-    elements.workUserShift.textContent = state.currentUser?.shift || 'Основная смена';
+    elements.workUserShift.textContent = getLocalizedShiftName(state.currentUser?.shift);
     resetItemForm(true);
     if (!elements.cargoPlaceInput.value.trim()) {
       setTimeout(() => elements.cargoPlaceInput?.focus(), 150);
@@ -293,29 +471,44 @@ function showScreen(screenName) {
 // ═══════════════════════════════════════════
 //  АВТОРИЗАЦИЯ И СМЕНЫ
 // ═══════════════════════════════════════════
-function getCurrentShiftName() {
+// ЖЕСТКО ДЛЯ GOOGLE ТАБЛИЦЫ: ВСЕГДА НА РУССКОМ
+function getCanonicalShiftName() {
   const hour = new Date().getHours();
   return (hour >= 9 && hour < 21) ? 'День' : 'Ночь';
+}
+
+function getCurrentShiftName() {
+  return getCanonicalShiftName();
+}
+
+function getLocalizedShiftName(shiftStr) {
+  const raw = shiftStr || getCanonicalShiftName();
+  if (state.currentLang === 'uz') {
+    if (raw.includes('День') || raw.includes('1 смена')) return 'Kun smenasi';
+    if (raw.includes('Ночь') || raw.includes('2 смена') || raw.includes('3 смена')) return 'Tun smenasi';
+    return raw.replace('локально', 'mahalliy').replace('офлайн', 'oflayn');
+  }
+  return raw;
 }
 
 function handleLogin(e) {
   e.preventDefault();
   const rawId = elements.employeeIdInput.value.trim();
   if (!rawId) {
-    showAuthError('Введите wms_id сотрудника');
+    showAuthError(t('enterWmsId'));
     return;
   }
 
   hideAuthError();
   elements.authSubmitBtn.disabled = true;
-  elements.authSubmitBtn.innerHTML = '<span>Проверка...</span>';
+  elements.authSubmitBtn.innerHTML = `<span>${t('checking')}</span>`;
 
   // Если URL Google Apps Script не задан — режим автономной/демо работы
   if (!state.apiUrl) {
     finalizeLogin({
       id: rawId,
       name: `Сотрудник #${rawId}`,
-      shift: getCurrentShiftName() + ' (локально)'
+      shift: getCanonicalShiftName() + ' (локально)'
     });
     return;
   }
@@ -328,10 +521,10 @@ function handleLogin(e) {
         finalizeLogin({
           id: rawId,
           name: data.name || `Сотрудник #${rawId}`,
-          shift: data.shift || getCurrentShiftName()
+          shift: data.shift || getCanonicalShiftName()
         });
       } else {
-        showAuthError(data.message || 'Сотрудник не найден в базе Employees');
+        showAuthError(t('empNotFound', { id: rawId }));
         playSound('error');
       }
     })
@@ -341,12 +534,12 @@ function handleLogin(e) {
       finalizeLogin({
         id: rawId,
         name: `Сотрудник #${rawId}`,
-        shift: getCurrentShiftName() + ' (офлайн)'
+        shift: getCanonicalShiftName() + ' (офлайн)'
       });
     })
     .finally(() => {
       elements.authSubmitBtn.disabled = false;
-      elements.authSubmitBtn.innerHTML = '<span>Войти в систему</span> <span>➜</span>';
+      elements.authSubmitBtn.innerHTML = `<span id="authSubmitText" data-i18n="authSubmitBtn">${t('authSubmitBtn')}</span> <span>➜</span>`;
     });
 }
 
@@ -354,7 +547,7 @@ function finalizeLogin(userData) {
   state.currentUser = userData;
   const sessionData = {
     user: userData,
-    shiftDayNight: getCurrentShiftName(),
+    shiftDayNight: getCanonicalShiftName(),
     loginTime: Date.now()
   };
   localStorage.setItem(STORAGE_KEYS.USER_SESSION, JSON.stringify(sessionData));
@@ -372,13 +565,13 @@ function checkSession() {
       return;
     }
     const session = JSON.parse(raw);
-    const currentShift = getCurrentShiftName();
+    const currentShift = getCanonicalShiftName();
 
     // Защита от пересменки: если смена сменилась (День <-> Ночь), требуем повторный вход
     if (session.shiftDayNight && session.shiftDayNight !== currentShift) {
       localStorage.removeItem(STORAGE_KEYS.USER_SESSION);
       showScreen('auth');
-      showAuthError('Смена завершилась. Войдите заново для новой смены.');
+      showAuthError(state.currentLang === 'uz' ? 'Smena yakunlandi. Yangi smena uchun qaytadan kiring.' : 'Смена завершилась. Войдите заново для новой смены.');
       return;
     }
 
@@ -494,7 +687,7 @@ function setupWorkScreenListeners() {
       e.preventDefault();
       const val = cargoInput.value.trim();
       if (!val) {
-        showCargoPlaceError('Отсканируйте ШК короба!');
+        showCargoPlaceError(t('scanBoxFirst'));
         playSound('error');
       } else {
         updateCargoPlaceStatus(val);
@@ -539,10 +732,10 @@ function setupWorkScreenListeners() {
       e.preventDefault();
       const code = barcodeInput.value.trim();
       if (code.length !== 13) {
-        showItemBarcodeError('ШК товара должен содержать ровно 13 цифр!');
+        showItemBarcodeError(t('barcode13Err'));
         playSound('error');
       } else {
-        showToast('ШК принят! Выберите причину проблемы ⚡', 'loading');
+        showToast(t('barcodeAccepted'), 'loading');
       }
     }
   });
@@ -574,7 +767,7 @@ function setupWorkScreenListeners() {
 function updateCargoPlaceStatus(val) {
   if (elements.cargoPlaceStatus) {
     if (val) {
-      elements.cargoPlaceStatus.textContent = `Короб: ${val}`;
+      elements.cargoPlaceStatus.textContent = `${t('boxPrefix')} ${val}`;
       elements.cargoPlaceStatus.classList.add('valid');
     } else {
       elements.cargoPlaceStatus.textContent = '';
@@ -647,28 +840,30 @@ function renderProblemsGrid() {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'problem-card-btn';
-    btn.setAttribute('data-problem', prob.name);
+    btn.setAttribute('data-problem-ru', prob.ru);
+
+    const displayName = (state.currentLang === 'uz' && prob.uz) ? prob.uz : prob.ru;
 
     btn.innerHTML = `
       <span class="problem-icon">${prob.icon || '⚠️'}</span>
-      <span class="problem-title">${prob.name}</span>
+      <span class="problem-title">${displayName}</span>
     `;
 
     btn.addEventListener('click', () => {
-      handleProblemSelection(prob.name, btn);
+      handleProblemSelection(prob, btn);
     });
 
     elements.problemsGrid.appendChild(btn);
   });
 }
 
-function handleProblemSelection(problemName, btnElement) {
+function handleProblemSelection(prob, btnElement) {
   const cargoPlace = elements.cargoPlaceInput.value.trim();
   const barcode = elements.itemBarcodeInput.value.trim();
 
   // 1. Валидация ШК Короба
   if (!cargoPlace) {
-    showCargoPlaceError('Сначала отсканируйте ШК короба!');
+    showCargoPlaceError(t('scanBoxFirst'));
     playSound('error');
     elements.cargoPlaceInput.focus();
     return;
@@ -676,7 +871,7 @@ function handleProblemSelection(problemName, btnElement) {
 
   // 2. Строгая валидация: строго 13 цифр!
   if (!/^\d{13}$/.test(barcode)) {
-    showItemBarcodeError('Ошибка: Штрих-код должен содержать ровно 13 цифр!');
+    showItemBarcodeError(t('barcode13Err'));
     playSound('error');
     elements.itemBarcodeInput.focus();
     return;
@@ -687,12 +882,15 @@ function handleProblemSelection(problemName, btnElement) {
   btnElement.classList.add('selected');
 
   const qty = parseInt(elements.qtyInput.value, 10) || 1;
+  const displayName = (state.currentLang === 'uz' && prob.uz) ? prob.uz : prob.ru;
 
   // Открываем окно подтверждения перед отправкой
+  // ВАЖНО: prob.ru жестко сохраняется на русском для Google Таблицы!
   openConfirmModal({
     cargoPlace: cargoPlace,
     barcode: barcode,
-    problem: problemName,
+    problemRu: prob.ru,
+    problemDisplay: displayName,
     qty: qty,
     sortingWall: state.currentWall
   });
@@ -704,8 +902,8 @@ function openConfirmModal(record) {
   if (elements.confirmWall) elements.confirmWall.textContent = record.sortingWall || '—';
   if (elements.confirmBox) elements.confirmBox.textContent = record.cargoPlace || '—';
   if (elements.confirmBarcode) elements.confirmBarcode.textContent = record.barcode || '—';
-  if (elements.confirmProblem) elements.confirmProblem.textContent = record.problem || '—';
-  if (elements.confirmQty) elements.confirmQty.textContent = `${record.qty} шт.`;
+  if (elements.confirmProblem) elements.confirmProblem.textContent = record.problemDisplay || record.problemRu || '—';
+  if (elements.confirmQty) elements.confirmQty.textContent = `${record.qty} ${t('pcs')}`;
 
   if (elements.confirmModal) {
     elements.confirmModal.classList.add('active');
@@ -731,29 +929,36 @@ function submitProblemRecord(record) {
   const now = new Date();
   const dateStr = formatDate(now);
   const timeStr = formatTime(now);
-  const shiftName = state.currentUser?.shift || getCurrentShiftName();
+
+  // ЖЕСТКО НА РУССКОМ ЯЗЫКЕ ДЛЯ GOOGLE ТАБЛИЦЫ
+  const shiftNameRu = getCanonicalShiftName();
 
   const recordPayload = {
     dateStr: dateStr,
     timeStr: timeStr,
-    shiftName: shiftName,
+    shiftName: shiftNameRu,                  // <-- ЖЕСТКО: "День" или "Ночь"
     employeeId: state.currentUser?.id || '',
     employeeName: state.currentUser?.name || '',
     sortingWall: record.sortingWall,
     cargoPlace: record.cargoPlace,
     barcode: record.barcode,
-    description: '',         // Колонка 9: Описание
-    category1: '',           // Колонка 10: Категория 1
-    category2: '',           // Колонка 11: Категория 2
-    compensationPrice: '',   // Колонка 12: Цена компенсации
-    problem: record.problem, // Колонка 13
-    qty: record.qty          // Колонка 14
+    description: '',                         // Колонка 9: Описание
+    category1: '',                           // Колонка 10: Категория 1
+    category2: '',                           // Колонка 11: Категория 2
+    compensationPrice: '',                   // Колонка 12: Цена компенсации
+    problem: record.problemRu,               // <-- ЖЕСТКО: канонический текст на русском языке!
+    qty: record.qty
   };
 
   // Мгновенный оптимистичный UX: проигрываем победный звук и добавляем в историю
   playSound('success');
-  addRecordToHistory(recordPayload);
-  showToast(`✅ Короб: ${record.cargoPlace} • ${record.problem} (${record.barcode})`, 'success');
+  addRecordToHistory({
+    ...recordPayload,
+    problemDisplay: record.problemDisplay || record.problemRu
+  });
+
+  const boxLabel = t('boxPrefix');
+  showToast(`✅ ${boxLabel} ${record.cargoPlace} • ${record.problemDisplay || record.problemRu} (${record.barcode})`, 'success');
   resetItemForm(true); // Сохраняем текущий короб для фиксации следующих товаров
   elements.itemBarcodeInput.focus();
 
@@ -869,26 +1074,30 @@ function loadHistory() {
 
 function renderHistoryList() {
   elements.historyList.innerHTML = '';
-  elements.historyCount.textContent = `${state.history.length} записей`;
+  elements.historyCount.textContent = `${state.history.length} ${t('recordsSuffix')}`;
 
   if (state.history.length === 0) {
-    elements.historyList.innerHTML = '<div class="history-empty">Здесь отобразятся отсканированные вами товары</div>';
+    elements.historyList.innerHTML = `<div class="history-empty">${t('historyEmpty')}</div>`;
     return;
   }
 
   state.history.forEach(item => {
     const div = document.createElement('div');
     div.className = 'history-item';
+    const reasonDisplay = (state.currentLang === 'uz')
+      ? (RU_TO_UZ_PROBLEMS_MAP[(item.problem || '').toLowerCase().trim()] || item.problemDisplay || item.problem)
+      : (item.problem || item.problemDisplay);
+
     div.innerHTML = `
       <div class="history-item-left">
         <span class="history-barcode">${item.barcode}</span>
         <div style="display: flex; gap: 8px; font-size: 12px; align-items: center;">
-          ${item.cargoPlace ? `<span style="color: var(--text-secondary); font-family: var(--font-display); font-weight: 600;">📦 Короб: ${item.cargoPlace}</span>` : ''}
-          <span class="history-reason">${item.problem}</span>
+          ${item.cargoPlace ? `<span style="color: var(--text-secondary); font-family: var(--font-display); font-weight: 600;">📦 ${t('boxPrefix')} ${item.cargoPlace}</span>` : ''}
+          <span class="history-reason">${reasonDisplay}</span>
         </div>
       </div>
       <div class="history-item-right">
-        <span class="history-qty">${item.qty} шт.</span>
+        <span class="history-qty">${item.qty} ${t('pcs')}</span>
         <span class="history-time">${item.timeStr || ''}</span>
       </div>
     `;
@@ -914,7 +1123,13 @@ function fetchDynamicConfig() {
               break;
             }
           }
-          return { name, icon };
+          const cleanRu = name.trim();
+          const uzTranslation = RU_TO_UZ_PROBLEMS_MAP[cleanRu.toLowerCase()] || cleanRu;
+          return {
+            ru: cleanRu,
+            uz: uzTranslation,
+            icon: icon
+          };
         });
         renderProblemsGrid();
       }
@@ -1017,6 +1232,14 @@ function setupEventListeners() {
       fetchDynamicConfig();
       syncOfflineQueue();
     }
+  });
+
+  // Переключатели языка (флажки в верхней панели и на экране входа)
+  document.querySelectorAll('.top-lang-btn, .lang-pill-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const lang = btn.getAttribute('data-lang');
+      if (lang) setLanguage(lang);
+    });
   });
 
   // Модалка подтверждения фиксации
