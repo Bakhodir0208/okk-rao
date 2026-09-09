@@ -285,7 +285,7 @@ function handleLogin(e) {
   e.preventDefault();
   const rawId = elements.employeeIdInput.value.trim();
   if (!rawId) {
-    showAuthError('Введите табельный номер сотрудника');
+    showAuthError('Введите wms_id сотрудника');
     return;
   }
 

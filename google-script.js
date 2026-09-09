@@ -73,7 +73,7 @@ function handleRequest(e) {
       } else {
         response = {
           success: false,
-          message: "Сотрудник с ID «" + employeeId + "» не найден в листе Employees"
+          message: "Сотрудник с wms_id «" + employeeId + "» не найден в листе Employees"
         };
       }
 
@@ -237,7 +237,7 @@ function setupSheet() {
   var empSheet = ss.getSheetByName("Employees");
   if (!empSheet) {
     empSheet = ss.insertSheet("Employees");
-    empSheet.appendRow(["ID", "ФИО", "Смена"]);
+    empSheet.appendRow(["wms_id", "ФИО", "Смена"]);
     empSheet.appendRow(["1001", "Алексей Смирнов", "1 смена"]);
     empSheet.appendRow(["1002", "Дмитрий Иванов", "2 смена"]);
     empSheet.appendRow(["1003", "Мария Козлова", "3 смена"]);
@@ -292,7 +292,7 @@ function setupSheet() {
       "Дата операции",
       "Время операции",
       "Смена",
-      "ID Сотрудника",
+      "wms_id Сотрудника",
       "ФИО сотрудника",
       "Стена сортировки",
       "ШК Грузоместо",
