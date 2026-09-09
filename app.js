@@ -20,21 +20,21 @@ const STORAGE_KEYS = {
 // ru — каноническое название ДЛЯ GOOGLE ТАБЛИЦЫ (жестко на русском языке!)
 // uz — грамотный перевод на узбекский язык для интерфейса
 const PROBLEMS_CATALOG = [
-  { ru: 'Протечка жидкости', uz: 'Suyuqlik oqishi', icon: '💧' },
-  { ru: 'Порвана упаковка (пакет)', uz: 'Paket qadog\'i yirtilgan', icon: '🛍️' },
-  { ru: 'Нет товарного вида', uz: 'Tovarlik ko\'rinishi yo\'q', icon: '📦' },
-  { ru: 'Товар сломан', uz: 'Mahsulot singan', icon: '🔨' },
-  { ru: 'Порвана упаковка (коробка)', uz: 'Quti qadog\'i yirtilgan', icon: '📦' },
-  { ru: 'Помята упаковка (коробка)', uz: 'Quti qadog\'i ezilgan', icon: '📦' },
-  { ru: 'Скол, вмятина, трещина', uz: 'Uchgan, ezilgan, yoriq', icon: '💥' },
-  { ru: 'Разбит стеклянный товар', uz: 'Shisha mahsulot singan', icon: '🍷' },
-  { ru: 'Некомплект', uz: 'To\'liq emas (kam-ko\'st)', icon: '🧩' },
-  { ru: 'Грязный товар', uz: 'Mahsulot ifloslangan', icon: '🧼' },
-  { ru: 'Срок годности', uz: 'Yaroqlilik muddati o\'tgan', icon: '⏳' },
-  { ru: 'Дефект одежды', uz: 'Kiyim nuqsoni', icon: '👕' },
-  { ru: 'Пустая упаковка', uz: 'Bo\'sh qadoq', icon: '📭' },
-  { ru: 'Личная гигиена упаковка', uz: 'Shaxsiy gigiyena qadog\'i', icon: '🧴' },
-  { ru: 'Испорчен другим товаром', uz: 'Boshqa mahsulotdan zararlangan', icon: '☣️' }
+  { ru: 'Протечка жидкости', uz: 'Суюқлик оқиши', icon: '💧' },
+  { ru: 'Порвана упаковка (пакет)', uz: 'Пакет қадоғи йиртилган', icon: '🛍️' },
+  { ru: 'Нет товарного вида', uz: 'Товарлик кўриниши йўқ', icon: '📦' },
+  { ru: 'Товар сломан', uz: 'Маҳсулот синган', icon: '🔨' },
+  { ru: 'Порвана упаковка (коробка)', uz: 'Қути қадоғи йиртилган', icon: '📦' },
+  { ru: 'Помята упаковка (коробка)', uz: 'Қути қадоғи эзилган', icon: '📦' },
+  { ru: 'Скол, вмятина, трещина', uz: 'Учган, эзилган, ёриқ', icon: '💥' },
+  { ru: 'Разбит стеклянный товар', uz: 'Шиша маҳсулот синган', icon: '🍷' },
+  { ru: 'Некомплект', uz: 'Тўлиқ эмас (кам-кўст)', icon: '🧩' },
+  { ru: 'Грязный товар', uz: 'Маҳсулот ифлосланган', icon: '🧼' },
+  { ru: 'Срок годности', uz: 'Яроқлилик муддати ўтган', icon: '⏳' },
+  { ru: 'Дефект одежды', uz: 'Кийим нуқсони', icon: '👕' },
+  { ru: 'Пустая упаковка', uz: 'Бўш қадоқ', icon: '📭' },
+  { ru: 'Личная гигиена упаковка', uz: 'Шахсий гигиена қадоғи', icon: '🧴' },
+  { ru: 'Испорчен другим товаром', uz: 'Бошқа маҳсулотдан зарарланган', icon: '☣️' }
 ];
 
 const RU_TO_UZ_PROBLEMS_MAP = {};
@@ -96,56 +96,56 @@ const I18N = {
     savedSettings: 'Настройки URL сохранены!'
   },
   uz: {
-    brandBadge: 'SNB • Sifat nazorati • RAO',
-    authHeading: 'RAO qayd etish',
-    employeeIdLabel: 'Xodimning wms_id raqami',
-    employeeIdPlaceholder: 'Masalan: 1001',
-    authSubmitBtn: 'Tizimga kirish',
-    checking: 'Tekshirilmoqda...',
-    userPrefix: 'Xodim:',
-    logout: 'Chiqish',
-    wallHeading: 'Saralash devorini skanerlang',
-    wallSub: 'Ish joyini biriktirish uchun saralash devori shtrix-kodini skanerlang',
-    scannerModeOnly: 'Faqat Shtrix-kod skaneri (qo\'lda kiritish o\'chirilgan)',
-    wallPlaceholder: 'Devor skanerlanishi kutilmoqda...',
-    manualNotice: 'Qo\'lda kiritish taqiqlangan! Iltimos, apparat shtrix-kod skaneridan foydalaning.',
-    wallPrefix: 'Devor:',
-    changeWall: 'Devorni almashtirish',
-    shiftDay: 'Kun',
-    shiftNight: 'Tun',
-    shiftDefault: 'Asosiy smena',
-    cargoPlaceLabel: 'Quti shtrix-kodi',
-    cargoPlacePlaceholder: 'Quti shtrix-kodini skanerlang...',
-    itemBarcodeLabel: 'Mahsulot shtrix-kodi (13 raqam)',
-    itemBarcodePlaceholder: 'Mahsulot shtrix-kodini skanerlang...',
-    qtyTitle: 'Birliklar soni',
-    qtyHint: 'Standart: 1 dona',
-    problemsTitle: 'Muammo sababi',
-    problemsTip: 'Sababni tanlang ⚡',
-    problemsLoading: 'Muammo sabablari yuklanmoqda...',
-    historyHeading: 'Xodimning so\'nggi qaydlari',
-    historyEmpty: 'Bu yerda siz skanerlagan mahsulotlar ko\'rinadi',
-    recordsSuffix: 'ta yozuv',
-    pcs: 'dona',
-    boxPrefix: 'Quti:',
-    inQueue: 'navbatda',
-    confirmTitle: 'Tasdiqlash',
-    confirmDesc: 'Iltimos, yuborishdan oldin ma\'lumotlar to\'g\'riligini tekshiring:',
-    confirmWall: '🧱 Saralash devori:',
-    confirmBox: '📦 Quti shtrix-kodi:',
-    confirmBarcode: '🏷️ Mahsulot shtrix-kodi:',
-    confirmProblem: '💥 Muammo sababi:',
-    confirmQty: '🔢 Birliklar soni:',
-    cancel: 'Bekor qilish',
-    send: 'Yuborish ➜',
-    enterWmsId: 'Xodimning wms_id raqamini kiriting',
-    empNotFound: 'wms_id «{id}» bo\'lgan xodim Employees bazasidan topilmadi',
-    scanBoxFirst: 'Avval quti shtrix-kodini skanerlang!',
-    barcode13Err: 'Xatolik: Shtrix-kod aynan 13 ta raqamdan iborat bo\'lishi kerak!',
-    barcodeAccepted: 'Shtrix-kod qabul qilindi! Sababni tanlang ⚡',
-    readyToast: 'Ishga tayyor',
-    syncSuccess: '⚡ {n} ta oflayn yozuv sinxronlandi!',
-    savedSettings: 'URL sozlamalari saqlandi!'
+    brandBadge: 'СНБ • Сифат назорати • РАО',
+    authHeading: 'РАО қайд этиш',
+    employeeIdLabel: 'Ходимнинг wms_id рақами',
+    employeeIdPlaceholder: 'Масалан: 1001',
+    authSubmitBtn: 'Тизимга кириш',
+    checking: 'Текширилмоқда...',
+    userPrefix: 'Ходим:',
+    logout: 'Чиқиш',
+    wallHeading: 'Саралаш деворини сканерланг',
+    wallSub: 'Иш жойини бириктириш учун саралаш девори штрих-кодини сканерланг',
+    scannerModeOnly: 'Фақат Штрих-код сканери (қўлда киритиш ўчирилган)',
+    wallPlaceholder: 'Девор сканерланиши кутилмоқда...',
+    manualNotice: 'Қўлда киритиш тақиқланган! Илтимос, аппарат штрих-код сканеридан фойдаланинг.',
+    wallPrefix: 'Девор:',
+    changeWall: 'Деворни алмаштириш',
+    shiftDay: 'Кун',
+    shiftNight: 'Тун',
+    shiftDefault: 'Асосий смена',
+    cargoPlaceLabel: 'Қути ШК',
+    cargoPlacePlaceholder: 'Қути штрих-кодини сканерланг...',
+    itemBarcodeLabel: 'Маҳсулот штрих-коди (13 рақам)',
+    itemBarcodePlaceholder: 'Маҳсулот штрих-кодини сканерланг...',
+    qtyTitle: 'Бирликлар сони',
+    qtyHint: 'Стандарт: 1 дона',
+    problemsTitle: 'Муаммо сабаби',
+    problemsTip: 'Сабабни танланг ⚡',
+    problemsLoading: 'Муаммо сабаблари юкланмоқда...',
+    historyHeading: 'Ходимнинг сўнгги қайдлари',
+    historyEmpty: 'Бу ерда сиз сканерлаган маҳсулотлар кўринади',
+    recordsSuffix: 'та ёзув',
+    pcs: 'дона',
+    boxPrefix: 'Қути:',
+    inQueue: 'навбатда',
+    confirmTitle: 'Тасдиқлаш',
+    confirmDesc: 'Илтимос, юборишдан олдин маълумотлар тўғрилигини текширинг:',
+    confirmWall: '🧱 Саралаш девори:',
+    confirmBox: '📦 Қути ШК:',
+    confirmBarcode: '🏷️ Маҳсулот ШК:',
+    confirmProblem: '💥 Муаммо сабаби:',
+    confirmQty: '🔢 Бирликлар сони:',
+    cancel: 'Бекор қилиш',
+    send: 'Юбориш ➜',
+    enterWmsId: 'Ходимнинг wms_id рақамини киритинг',
+    empNotFound: 'wms_id «{id}» бўлган ходим Employees базасидан топилмади',
+    scanBoxFirst: 'Аввал қути штрих-кодини сканерланг!',
+    barcode13Err: 'Хатолик: Штрих-код айнан 13 та рақамдан иборат бўлиши керак!',
+    barcodeAccepted: 'ШК қабул қилинди! Муаммо сабабини танланг ⚡',
+    readyToast: 'Ишга тайёр',
+    syncSuccess: '⚡ {n} та офлайн ёзув синхронланди!',
+    savedSettings: 'URL созламалари сақланди!'
   }
 };
 
@@ -484,9 +484,9 @@ function getCurrentShiftName() {
 function getLocalizedShiftName(shiftStr) {
   const raw = shiftStr || getCanonicalShiftName();
   if (state.currentLang === 'uz') {
-    if (raw.includes('День') || raw.includes('1 смена')) return 'Kun smenasi';
-    if (raw.includes('Ночь') || raw.includes('2 смена') || raw.includes('3 смена')) return 'Tun smenasi';
-    return raw.replace('локально', 'mahalliy').replace('офлайн', 'oflayn');
+    if (raw.includes('День') || raw.includes('1 смена')) return 'Кун сменаси';
+    if (raw.includes('Ночь') || raw.includes('2 смена') || raw.includes('3 смена')) return 'Тун сменаси';
+    return raw.replace('локально', 'маҳаллий').replace('офлайн', 'офлайн');
   }
   return raw;
 }
@@ -571,7 +571,7 @@ function checkSession() {
     if (session.shiftDayNight && session.shiftDayNight !== currentShift) {
       localStorage.removeItem(STORAGE_KEYS.USER_SESSION);
       showScreen('auth');
-      showAuthError(state.currentLang === 'uz' ? 'Smena yakunlandi. Yangi smena uchun qaytadan kiring.' : 'Смена завершилась. Войдите заново для новой смены.');
+      showAuthError(state.currentLang === 'uz' ? 'Смена якунланди. Янги смена учун қайтадан киринг.' : 'Смена завершилась. Войдите заново для новой смены.');
       return;
     }
 
