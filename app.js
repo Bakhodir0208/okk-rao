@@ -395,10 +395,9 @@ function hideAuthError() {
 }
 
 // ═══════════════════════════════════════════
-//  СКАНЕР СТЕНЫ СОРТИРОВКИ (ЗАПРЕТ РУЧНОГО ВВОДА)
+//  СКАНЕР СТЕНЫ СОРТИРОВКИ (ОПТИМИЗИРОВАНО ПОД СКАНЕРЫ UROVO В РЕЖИМЕ КЛАВИАТУРЫ)
 // ═══════════════════════════════════════════
-let wallKeystrokeTimestamps = [];
-let manualBlockTimeout = null;
+let wallInputDebounce = null;
 
 function setupWallScannerListener() {
   const input = elements.wallBarcodeInput;
@@ -409,58 +408,40 @@ function setupWallScannerListener() {
   });
 
   input.addEventListener('keydown', (e) => {
-    // Клавиша Enter означает окончание считывания штрих-кода сканером
-    if (e.key === 'Enter') {
+    // Клавиша Enter или Tab от сканера Urovo означает окончание считывания
+    if (e.key === 'Enter' || e.key === 'Tab') {
       e.preventDefault();
-      processWallScan(input.value.trim());
-      return;
-    }
-
-    // Замеряем скорость ввода: аппаратный сканер вводит символы пачкой (< 40мс между символами)
-    const now = performance.now();
-    wallKeystrokeTimestamps.push(now);
-    if (wallKeystrokeTimestamps.length > 3) {
-      wallKeystrokeTimestamps.shift();
-      const diff1 = wallKeystrokeTimestamps[1] - wallKeystrokeTimestamps[0];
-      const diff2 = wallKeystrokeTimestamps[2] - wallKeystrokeTimestamps[1];
-
-      // Если ввод происходит медленно (человек печатает пальцами)
-      if (diff1 > 65 || diff2 > 65) {
-        triggerManualInputBlock();
+      clearTimeout(wallInputDebounce);
+      const val = input.value.trim();
+      if (val) {
+        processWallScan(val);
       }
     }
   });
 
   input.addEventListener('input', () => {
     input.value = autoConvertLayout(input.value);
+    hideManualNotice();
+
+    // Авто-фиксация для сканеров без суффикса Enter
+    clearTimeout(wallInputDebounce);
+    if (input.value.trim().length >= 2) {
+      wallInputDebounce = setTimeout(() => {
+        if (elements.wallScanScreen.classList.contains('active')) {
+          processWallScan(input.value.trim());
+        }
+      }, 300);
+    }
   });
-}
-
-function triggerManualInputBlock() {
-  elements.wallBarcodeInput.value = '';
-  elements.manualInputNotice.classList.add('visible');
-  playSound('error');
-
-  clearTimeout(manualBlockTimeout);
-  manualBlockTimeout = setTimeout(() => {
-    elements.manualInputNotice.classList.remove('visible');
-  }, 3500);
 }
 
 function hideManualNotice() {
   elements.manualInputNotice.classList.remove('visible');
-  wallKeystrokeTimestamps = [];
 }
 
 function processWallScan(rawCode) {
   const wallCode = autoConvertLayout(rawCode).trim();
-  if (!wallCode) return;
-
-  // Если штрих-код слишком короткий (случайное нажатие)
-  if (wallCode.length < 2) {
-    triggerManualInputBlock();
-    return;
-  }
+  if (!wallCode || wallCode.length < 1) return;
 
   state.currentWall = wallCode;
 
@@ -987,6 +968,32 @@ function setupEventListeners() {
     if (newUrl) {
       fetchDynamicConfig();
       syncOfflineQueue();
+    }
+  });
+
+  // Глобальный перехват ввода со сканера UROVO-R70 (режим клавиатуры)
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' || e.key.startsWith('F') || e.ctrlKey || e.altKey || e.metaKey) return;
+    if (elements.settingsModal.classList.contains('active')) return;
+
+    const activeEl = document.activeElement;
+
+    // 1. Экран сканирования стены
+    if (elements.wallScanScreen.classList.contains('active')) {
+      if (activeEl !== elements.wallBarcodeInput) {
+        elements.wallBarcodeInput.focus();
+      }
+    }
+    // 2. Рабочий экран фиксации
+    else if (elements.workScreen.classList.contains('active')) {
+      const isInput = (activeEl === elements.cargoPlaceInput || activeEl === elements.itemBarcodeInput || activeEl === elements.qtyInput);
+      if (!isInput) {
+        if (!elements.cargoPlaceInput.value.trim()) {
+          elements.cargoPlaceInput.focus();
+        } else {
+          elements.itemBarcodeInput.focus();
+        }
+      }
     }
   });
 }
