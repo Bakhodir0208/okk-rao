@@ -51,11 +51,15 @@ const PROBLEM_ICON_MAP = {
   'испорчен': '☣️'
 };
 
+const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbwXDvJkSjzdBJQe8-ScYl3g0eWp7Qreb5ORleorg5vPrMFTfKk7RPT8kVWdRNgShHe8dw/exec';
+
 // ═══════════════════════════════════════════
 //  СОСТОЯНИЕ ПРИЛОЖЕНИЯ
 // ═══════════════════════════════════════════
 const state = {
-  apiUrl: localStorage.getItem(STORAGE_KEYS.API_URL) || '',
+  apiUrl: (localStorage.getItem(STORAGE_KEYS.API_URL) && localStorage.getItem(STORAGE_KEYS.API_URL).trim().startsWith('http'))
+    ? localStorage.getItem(STORAGE_KEYS.API_URL).trim()
+    : DEFAULT_API_URL,
   currentUser: null,
   currentWall: null,
   soundEnabled: localStorage.getItem(STORAGE_KEYS.SOUND_ENABLED) !== 'false',
@@ -177,6 +181,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   renderProblemsGrid();
   updateOfflineQueueBadge();
+  fetchDynamicConfig();
+  syncOfflineQueue();
   checkSession();
 });
 
