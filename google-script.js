@@ -147,7 +147,7 @@ function handleRequest(e) {
           parameter.employeeId || "",                   // 4. ID Сотрудника
           parameter.employeeName || "",                 // 5. ФИО сотрудника
           parameter.sortingWall || "",                  // 6. Стена сортировки
-          String(parameter.cargoPlace || "").trim(),    // 7. ШК Грузоместо
+          String(parameter.cargoPlace || "").trim(),    // 7. ШК Короба
           String(parameter.barcode || "").trim(),       // 8. ШК Товара (13 цифр)
           parameter.description || "",                  // 9. Описание
           parameter.category1 || "",                    // 10. Категория 1
@@ -295,7 +295,7 @@ function setupSheet() {
       "wms_id Сотрудника",
       "ФИО сотрудника",
       "Стена сортировки",
-      "ШК Грузоместо",
+      "ШК Короба",
       "ШК Товара",
       "Описание",
       "Категория 1",

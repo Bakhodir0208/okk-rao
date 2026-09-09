@@ -140,22 +140,21 @@
         <!-- Форма фиксации товара -->
         <form id="itemRecordForm" novalidate>
 
-          <!-- Поле: ШК Грузоместо (ГМ) -->
+          <!-- Поле: ШК Короба -->
           <div class="barcode-input-container">
             <div class="barcode-header">
-              <label for="cargoPlaceInput">ШК Грузоместо (ГМ)</label>
-              <div id="cargoPlaceStatus" class="barcode-counter">Ожидание ГМ</div>
+              <label for="cargoPlaceInput">ШК Короба</label>
             </div>
             <div class="input-wrapper">
               <input
                 type="text"
                 id="cargoPlaceInput"
                 class="barcode-input-field"
-                placeholder="Отсканируйте ШК грузоместа..."
+                placeholder="Отсканируйте ШК короба..."
                 required
                 autocomplete="off"
               >
-              <button type="button" class="clear-btn" id="clearCargoPlace" aria-label="Очистить ГМ">&times;</button>
+              <button type="button" class="clear-btn" id="clearCargoPlace" aria-label="Очистить короб">&times;</button>
             </div>
             <div id="cargoPlaceError" class="error-text"></div>
           </div>
@@ -164,7 +163,6 @@
           <div class="barcode-input-container">
             <div class="barcode-header">
               <label for="itemBarcodeInput" id="workScreenHeading">Штрих-код товара (13 цифр)</label>
-              <div id="barcodeDigitCounter" class="barcode-counter">0 / 13</div>
             </div>
             <div class="input-wrapper">
               <input
@@ -208,7 +206,7 @@
           <div class="problems-section">
             <div class="problems-section-header">
               <h3>Причина проблемы</h3>
-              <span class="tip">Клик отправляет фиксацию ⚡</span>
+              <span class="tip">Выберите причину ⚡</span>
             </div>
 
             <div id="problemsGrid" class="problems-grid">
@@ -240,6 +238,45 @@
       </div>
     </section>
 
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО: ПОДТВЕРЖДЕНИЕ ФИКСАЦИИ -->
+  <div id="confirmModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+    <div class="modal-card">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+        <span style="font-size: 24px;">📝</span>
+        <h3 id="confirmModalTitle" style="margin: 0;">Подтверждение</h3>
+      </div>
+      <p style="margin-bottom: 16px;">Пожалуйста, проверьте правильность данных перед отправкой:</p>
+
+      <div class="confirm-summary">
+        <div class="confirm-row">
+          <span class="confirm-label">🧱 Стена сортировки:</span>
+          <span id="confirmWall" class="confirm-value">—</span>
+        </div>
+        <div class="confirm-row">
+          <span class="confirm-label">📦 ШК Короба:</span>
+          <span id="confirmBox" class="confirm-value">—</span>
+        </div>
+        <div class="confirm-row">
+          <span class="confirm-label">🏷️ ШК Товара:</span>
+          <span id="confirmBarcode" class="confirm-value" style="color: #ffffff; letter-spacing: 1px;">—</span>
+        </div>
+        <div class="confirm-row">
+          <span class="confirm-label">💥 Причина проблемы:</span>
+          <span id="confirmProblem" class="confirm-value" style="color: var(--accent-color);">—</span>
+        </div>
+        <div class="confirm-row">
+          <span class="confirm-label">🔢 Количество:</span>
+          <span id="confirmQty" class="confirm-value">1 шт.</span>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="display: flex; gap: 10px; margin-top: 20px;">
+        <button type="button" id="cancelConfirmBtn" class="btn btn-secondary" style="flex: 1;">Отмена</button>
+        <button type="button" id="submitConfirmBtn" class="btn btn-primary" style="flex: 1.4;">Отправить ➜</button>
+      </div>
+    </div>
   </div>
 
   <!-- МОДАЛЬНОЕ ОКНО: НАСТРОЙКИ СЕРВЕРА APPS SCRIPT -->

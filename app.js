@@ -66,7 +66,8 @@ const state = {
   problemsList: [...DEFAULT_PROBLEMS],
   offlineQueue: [],
   history: [],
-  isSubmitting: false
+  isSubmitting: false,
+  pendingRecord: null
 };
 
 // ═══════════════════════════════════════════
@@ -243,7 +244,17 @@ function cacheElements() {
     settingsModal: document.getElementById('settingsModal'),
     scriptUrlInput: document.getElementById('scriptUrlInput'),
     cancelSettingsBtn: document.getElementById('cancelSettingsBtn'),
-    saveSettingsBtn: document.getElementById('saveSettingsBtn')
+    saveSettingsBtn: document.getElementById('saveSettingsBtn'),
+
+    // Confirm Modal
+    confirmModal: document.getElementById('confirmModal'),
+    confirmWall: document.getElementById('confirmWall'),
+    confirmBox: document.getElementById('confirmBox'),
+    confirmBarcode: document.getElementById('confirmBarcode'),
+    confirmProblem: document.getElementById('confirmProblem'),
+    confirmQty: document.getElementById('confirmQty'),
+    cancelConfirmBtn: document.getElementById('cancelConfirmBtn'),
+    submitConfirmBtn: document.getElementById('submitConfirmBtn')
   };
 }
 
@@ -469,7 +480,7 @@ function processWallScan(rawCode) {
 //  РАБОЧИЙ ЭКРАН: ВАЛИДАЦИЯ ШК И ФИКСАЦИЯ
 // ═══════════════════════════════════════════
 function setupWorkScreenListeners() {
-  // ШК Грузоместо (ГМ)
+  // ШК Короба
   const cargoInput = elements.cargoPlaceInput;
   cargoInput.addEventListener('input', () => {
     const val = autoConvertLayout(cargoInput.value).trim();
@@ -483,7 +494,7 @@ function setupWorkScreenListeners() {
       e.preventDefault();
       const val = cargoInput.value.trim();
       if (!val) {
-        showCargoPlaceError('Отсканируйте ШК грузоместа!');
+        showCargoPlaceError('Отсканируйте ШК короба!');
         playSound('error');
       } else {
         updateCargoPlaceStatus(val);
@@ -561,14 +572,19 @@ function setupWorkScreenListeners() {
 }
 
 function updateCargoPlaceStatus(val) {
+  if (elements.cargoPlaceStatus) {
+    if (val) {
+      elements.cargoPlaceStatus.textContent = `Короб: ${val}`;
+      elements.cargoPlaceStatus.classList.add('valid');
+    } else {
+      elements.cargoPlaceStatus.textContent = '';
+      elements.cargoPlaceStatus.classList.remove('valid');
+    }
+  }
   if (val) {
-    elements.cargoPlaceStatus.textContent = `ГМ: ${val}`;
-    elements.cargoPlaceStatus.classList.add('valid');
     elements.cargoPlaceInput.classList.add('input-valid');
     elements.cargoPlaceInput.classList.remove('input-error');
   } else {
-    elements.cargoPlaceStatus.textContent = 'Ожидание ГМ';
-    elements.cargoPlaceStatus.classList.remove('valid');
     elements.cargoPlaceInput.classList.remove('input-valid');
   }
 }
@@ -586,11 +602,13 @@ function clearCargoPlaceError() {
 }
 
 function updateBarcodeCounter(len) {
-  elements.barcodeDigitCounter.textContent = `${len} / 13`;
-  if (len === 13) {
-    elements.barcodeDigitCounter.classList.add('valid');
-  } else {
-    elements.barcodeDigitCounter.classList.remove('valid');
+  if (elements.barcodeDigitCounter) {
+    elements.barcodeDigitCounter.textContent = `${len} / 13`;
+    if (len === 13) {
+      elements.barcodeDigitCounter.classList.add('valid');
+    } else {
+      elements.barcodeDigitCounter.classList.remove('valid');
+    }
   }
 }
 
@@ -648,9 +666,9 @@ function handleProblemSelection(problemName, btnElement) {
   const cargoPlace = elements.cargoPlaceInput.value.trim();
   const barcode = elements.itemBarcodeInput.value.trim();
 
-  // 1. Валидация ШК Грузоместо (ГМ)
+  // 1. Валидация ШК Короба
   if (!cargoPlace) {
-    showCargoPlaceError('Сначала отсканируйте ШК грузоместа!');
+    showCargoPlaceError('Сначала отсканируйте ШК короба!');
     playSound('error');
     elements.cargoPlaceInput.focus();
     return;
@@ -670,13 +688,37 @@ function handleProblemSelection(problemName, btnElement) {
 
   const qty = parseInt(elements.qtyInput.value, 10) || 1;
 
-  submitProblemRecord({
+  // Открываем окно подтверждения перед отправкой
+  openConfirmModal({
     cargoPlace: cargoPlace,
     barcode: barcode,
     problem: problemName,
     qty: qty,
     sortingWall: state.currentWall
   });
+}
+
+function openConfirmModal(record) {
+  state.pendingRecord = record;
+
+  if (elements.confirmWall) elements.confirmWall.textContent = record.sortingWall || '—';
+  if (elements.confirmBox) elements.confirmBox.textContent = record.cargoPlace || '—';
+  if (elements.confirmBarcode) elements.confirmBarcode.textContent = record.barcode || '—';
+  if (elements.confirmProblem) elements.confirmProblem.textContent = record.problem || '—';
+  if (elements.confirmQty) elements.confirmQty.textContent = `${record.qty} шт.`;
+
+  if (elements.confirmModal) {
+    elements.confirmModal.classList.add('active');
+    setTimeout(() => elements.submitConfirmBtn?.focus(), 100);
+  }
+}
+
+function closeConfirmModal() {
+  state.pendingRecord = null;
+  if (elements.confirmModal) {
+    elements.confirmModal.classList.remove('active');
+  }
+  document.querySelectorAll('.problem-card-btn').forEach(b => b.classList.remove('selected'));
 }
 
 // ═══════════════════════════════════════════
@@ -711,8 +753,8 @@ function submitProblemRecord(record) {
   // Мгновенный оптимистичный UX: проигрываем победный звук и добавляем в историю
   playSound('success');
   addRecordToHistory(recordPayload);
-  showToast(`✅ ГМ: ${record.cargoPlace} • ${record.problem} (${record.barcode})`, 'success');
-  resetItemForm(true); // Сохраняем текущее грузоместо для фиксации следующих товаров
+  showToast(`✅ Короб: ${record.cargoPlace} • ${record.problem} (${record.barcode})`, 'success');
+  resetItemForm(true); // Сохраняем текущий короб для фиксации следующих товаров
   elements.itemBarcodeInput.focus();
 
   // Отправка в Google Apps Script
@@ -841,7 +883,7 @@ function renderHistoryList() {
       <div class="history-item-left">
         <span class="history-barcode">${item.barcode}</span>
         <div style="display: flex; gap: 8px; font-size: 12px; align-items: center;">
-          ${item.cargoPlace ? `<span style="color: var(--text-secondary); font-family: var(--font-display); font-weight: 600;">📦 ${item.cargoPlace}</span>` : ''}
+          ${item.cargoPlace ? `<span style="color: var(--text-secondary); font-family: var(--font-display); font-weight: 600;">📦 Короб: ${item.cargoPlace}</span>` : ''}
           <span class="history-reason">${item.problem}</span>
         </div>
       </div>
@@ -977,8 +1019,50 @@ function setupEventListeners() {
     }
   });
 
+  // Модалка подтверждения фиксации
+  if (elements.cancelConfirmBtn) {
+    elements.cancelConfirmBtn.addEventListener('click', () => {
+      closeConfirmModal();
+      elements.itemBarcodeInput.focus();
+    });
+  }
+
+  if (elements.submitConfirmBtn) {
+    elements.submitConfirmBtn.addEventListener('click', () => {
+      if (state.pendingRecord) {
+        const record = state.pendingRecord;
+        closeConfirmModal();
+        submitProblemRecord(record);
+      }
+    });
+  }
+
+  if (elements.confirmModal) {
+    elements.confirmModal.addEventListener('click', (e) => {
+      if (e.target === elements.confirmModal) {
+        closeConfirmModal();
+      }
+    });
+  }
+
   // Глобальный перехват ввода со сканера UROVO-R70 (режим клавиатуры)
   document.addEventListener('keydown', (e) => {
+    // 0. Если открыта модалка подтверждения: Enter отправляет, Escape закрывает
+    if (elements.confirmModal && elements.confirmModal.classList.contains('active')) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeConfirmModal();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (state.pendingRecord) {
+          const record = state.pendingRecord;
+          closeConfirmModal();
+          submitProblemRecord(record);
+        }
+      }
+      return;
+    }
+
     if (e.key === 'Escape' || e.key.startsWith('F') || e.ctrlKey || e.altKey || e.metaKey) return;
     if (elements.settingsModal.classList.contains('active')) return;
 
