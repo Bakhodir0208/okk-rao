@@ -141,6 +141,26 @@
         <!-- Форма фиксации товара -->
         <form id="itemRecordForm" novalidate>
 
+          <!-- Поле: ШК Грузоместо (ГМ) -->
+          <div class="barcode-input-container">
+            <div class="barcode-header">
+              <label for="cargoPlaceInput">ШК Грузоместо (ГМ)</label>
+              <div id="cargoPlaceStatus" class="barcode-counter">Ожидание ГМ</div>
+            </div>
+            <div class="input-wrapper">
+              <input
+                type="text"
+                id="cargoPlaceInput"
+                class="barcode-input-field"
+                placeholder="Отсканируйте ШК грузоместа..."
+                required
+                autocomplete="off"
+              >
+              <button type="button" class="clear-btn" id="clearCargoPlace" aria-label="Очистить ГМ">&times;</button>
+            </div>
+            <div id="cargoPlaceError" class="error-text"></div>
+          </div>
+
           <!-- Поле: Штрих-код товара (строго 13 цифр) -->
           <div class="barcode-input-container">
             <div class="barcode-header">

@@ -118,6 +118,7 @@ function handleRequest(e) {
             rec.employeeId || parameter.employeeId || "",
             rec.employeeName || parameter.employeeName || "",
             rec.sortingWall || parameter.sortingWall || "",
+            String(rec.cargoPlace || parameter.cargoPlace || "").trim(),
             String(rec.barcode || "").trim(),
             rec.description || "",
             rec.category1 || "",
@@ -130,7 +131,7 @@ function handleRequest(e) {
 
         if (rows.length > 0) {
           var lastRow = logSheet.getLastRow();
-          logSheet.getRange(lastRow + 1, 1, rows.length, 13).setValues(rows);
+          logSheet.getRange(lastRow + 1, 1, rows.length, 14).setValues(rows);
         }
 
         response = {
@@ -146,17 +147,18 @@ function handleRequest(e) {
           parameter.employeeId || "",                   // 4. ID Сотрудника
           parameter.employeeName || "",                 // 5. ФИО сотрудника
           parameter.sortingWall || "",                  // 6. Стена сортировки
-          String(parameter.barcode || "").trim(),       // 7. ШК Товара (13 цифр)
-          parameter.description || "",                  // 8. Описание
-          parameter.category1 || "",                    // 9. Категория 1
-          parameter.category2 || "",                    // 10. Категория 2
-          parameter.compensationPrice || "",            // 11. Цена компенсации
-          parameter.problem || "",                      // 12. Причина проблемы
-          Number(parameter.qty || 1)                    // 13. Количество
+          String(parameter.cargoPlace || "").trim(),    // 7. ШК Грузоместо
+          String(parameter.barcode || "").trim(),       // 8. ШК Товара (13 цифр)
+          parameter.description || "",                  // 9. Описание
+          parameter.category1 || "",                    // 10. Категория 1
+          parameter.category2 || "",                    // 11. Категория 2
+          parameter.compensationPrice || "",            // 12. Цена компенсации
+          parameter.problem || "",                      // 13. Причина проблемы
+          Number(parameter.qty || 1)                    // 14. Количество
         ];
 
         var lastRow = logSheet.getLastRow();
-        logSheet.getRange(lastRow + 1, 1, 1, 13).setValues([newRow]);
+        logSheet.getRange(lastRow + 1, 1, 1, 14).setValues([newRow]);
 
         response = {
           success: true,
@@ -176,7 +178,7 @@ function handleRequest(e) {
         var startRow = Math.max(2, lastRow - maxRowsToRead + 1);
         var numRows = lastRow - startRow + 1;
 
-        var logData = logSheet.getRange(startRow, 1, numRows, 13).getValues();
+        var logData = logSheet.getRange(startRow, 1, numRows, 14).getValues();
 
         for (var i = logData.length - 1; i >= 0; i--) {
           if (String(logData[i][3]).trim() === employeeId) {
@@ -185,9 +187,10 @@ function handleRequest(e) {
               time: logData[i][1],
               shift: logData[i][2],
               wall: logData[i][5],
-              barcode: logData[i][6],
-              problem: logData[i][11],
-              qty: logData[i][12]
+              cargoPlace: logData[i][6],
+              barcode: logData[i][7],
+              problem: logData[i][12],
+              qty: logData[i][13]
             });
           }
           if (userLogs.length >= 25) break;
@@ -281,7 +284,7 @@ function setupSheet() {
     configSheet.autoResizeColumns(1, 3);
   }
 
-  // 3. Лист Log (13 утвержденных колонок)
+  // 3. Лист Log (14 утвержденных колонок)
   var logSheet = ss.getSheetByName("Log");
   if (!logSheet) {
     logSheet = ss.insertSheet("Log");
@@ -292,6 +295,7 @@ function setupSheet() {
       "ID Сотрудника",
       "ФИО сотрудника",
       "Стена сортировки",
+      "ШК Грузоместо",
       "ШК Товара",
       "Описание",
       "Категория 1",
@@ -301,11 +305,11 @@ function setupSheet() {
       "Количество"
     ]);
 
-    logSheet.getRange("A1:M1")
+    logSheet.getRange("A1:N1")
       .setBackground("#7000ff")
       .setFontColor("#ffffff")
       .setFontWeight("bold");
-    logSheet.autoResizeColumns(1, 13);
+    logSheet.autoResizeColumns(1, 14);
   }
 
   var defaultSheet = ss.getSheetByName("Sheet1") || ss.getSheetByName("Лист1");

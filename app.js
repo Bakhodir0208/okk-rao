@@ -215,6 +215,10 @@ function cacheElements() {
     workUserName: document.getElementById('workUserName'),
     workUserShift: document.getElementById('workUserShift'),
     itemRecordForm: document.getElementById('itemRecordForm'),
+    cargoPlaceInput: document.getElementById('cargoPlaceInput'),
+    cargoPlaceStatus: document.getElementById('cargoPlaceStatus'),
+    clearCargoPlace: document.getElementById('clearCargoPlace'),
+    cargoPlaceError: document.getElementById('cargoPlaceError'),
     itemBarcodeInput: document.getElementById('itemBarcodeInput'),
     clearItemBarcode: document.getElementById('clearItemBarcode'),
     barcodeDigitCounter: document.getElementById('barcodeDigitCounter'),
@@ -259,8 +263,12 @@ function showScreen(screenName) {
     elements.activeWallBadge.textContent = `Стена: ${state.currentWall}`;
     elements.workUserName.textContent = state.currentUser?.name || `ID ${state.currentUser?.id}`;
     elements.workUserShift.textContent = state.currentUser?.shift || 'Основная смена';
-    resetItemForm();
-    setTimeout(() => elements.itemBarcodeInput?.focus(), 150);
+    resetItemForm(true);
+    if (!elements.cargoPlaceInput.value.trim()) {
+      setTimeout(() => elements.cargoPlaceInput?.focus(), 150);
+    } else {
+      setTimeout(() => elements.itemBarcodeInput?.focus(), 150);
+    }
     loadHistory();
   }
 }
@@ -474,6 +482,38 @@ function processWallScan(rawCode) {
 //  РАБОЧИЙ ЭКРАН: ВАЛИДАЦИЯ ШК И ФИКСАЦИЯ
 // ═══════════════════════════════════════════
 function setupWorkScreenListeners() {
+  // ШК Грузоместо (ГМ)
+  const cargoInput = elements.cargoPlaceInput;
+  cargoInput.addEventListener('input', () => {
+    const val = autoConvertLayout(cargoInput.value).trim();
+    cargoInput.value = val;
+    updateCargoPlaceStatus(val);
+    clearCargoPlaceError();
+  });
+
+  cargoInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const val = cargoInput.value.trim();
+      if (!val) {
+        showCargoPlaceError('Отсканируйте ШК грузоместа!');
+        playSound('error');
+      } else {
+        updateCargoPlaceStatus(val);
+        clearCargoPlaceError();
+        elements.itemBarcodeInput.focus();
+      }
+    }
+  });
+
+  elements.clearCargoPlace.addEventListener('click', () => {
+    cargoInput.value = '';
+    updateCargoPlaceStatus('');
+    clearCargoPlaceError();
+    cargoInput.focus();
+  });
+
+  // Штрих-код товара
   const barcodeInput = elements.itemBarcodeInput;
 
   // Автоматический пересчет и перевод раскладки при сканировании ШК
@@ -533,6 +573,31 @@ function setupWorkScreenListeners() {
   });
 }
 
+function updateCargoPlaceStatus(val) {
+  if (val) {
+    elements.cargoPlaceStatus.textContent = `ГМ: ${val}`;
+    elements.cargoPlaceStatus.classList.add('valid');
+    elements.cargoPlaceInput.classList.add('input-valid');
+    elements.cargoPlaceInput.classList.remove('input-error');
+  } else {
+    elements.cargoPlaceStatus.textContent = 'Ожидание ГМ';
+    elements.cargoPlaceStatus.classList.remove('valid');
+    elements.cargoPlaceInput.classList.remove('input-valid');
+  }
+}
+
+function showCargoPlaceError(msg) {
+  elements.cargoPlaceError.textContent = msg;
+  elements.cargoPlaceError.classList.add('visible');
+  elements.cargoPlaceInput.classList.add('input-error');
+  elements.cargoPlaceInput.classList.remove('input-valid');
+}
+
+function clearCargoPlaceError() {
+  elements.cargoPlaceError.classList.remove('visible');
+  elements.cargoPlaceInput.classList.remove('input-error');
+}
+
 function updateBarcodeCounter(len) {
   elements.barcodeDigitCounter.textContent = `${len} / 13`;
   if (len === 13) {
@@ -554,7 +619,12 @@ function clearItemBarcodeError() {
   elements.itemBarcodeInput.classList.remove('input-error');
 }
 
-function resetItemForm() {
+function resetItemForm(keepCargoPlace = true) {
+  if (!keepCargoPlace) {
+    elements.cargoPlaceInput.value = '';
+    updateCargoPlaceStatus('');
+  }
+  clearCargoPlaceError();
   elements.itemBarcodeInput.value = '';
   elements.qtyInput.value = '1';
   updateBarcodeCounter(0);
@@ -588,9 +658,18 @@ function renderProblemsGrid() {
 }
 
 function handleProblemSelection(problemName, btnElement) {
+  const cargoPlace = elements.cargoPlaceInput.value.trim();
   const barcode = elements.itemBarcodeInput.value.trim();
 
-  // Строгая валидация: строго 13 цифр!
+  // 1. Валидация ШК Грузоместо (ГМ)
+  if (!cargoPlace) {
+    showCargoPlaceError('Сначала отсканируйте ШК грузоместа!');
+    playSound('error');
+    elements.cargoPlaceInput.focus();
+    return;
+  }
+
+  // 2. Строгая валидация: строго 13 цифр!
   if (!/^\d{13}$/.test(barcode)) {
     showItemBarcodeError('Ошибка: Штрих-код должен содержать ровно 13 цифр!');
     playSound('error');
@@ -605,6 +684,7 @@ function handleProblemSelection(problemName, btnElement) {
   const qty = parseInt(elements.qtyInput.value, 10) || 1;
 
   submitProblemRecord({
+    cargoPlace: cargoPlace,
     barcode: barcode,
     problem: problemName,
     qty: qty,
@@ -613,7 +693,7 @@ function handleProblemSelection(problemName, btnElement) {
 }
 
 // ═══════════════════════════════════════════
-//  ОТПРАВКА ЗАПИСИ (ФИКСАЦИЯ В 13 КОЛОНОК)
+//  ОТПРАВКА ЗАПИСИ (ФИКСАЦИЯ В 14 КОЛОНОК)
 // ═══════════════════════════════════════════
 function submitProblemRecord(record) {
   if (state.isSubmitting) return;
@@ -631,20 +711,21 @@ function submitProblemRecord(record) {
     employeeId: state.currentUser?.id || '',
     employeeName: state.currentUser?.name || '',
     sortingWall: record.sortingWall,
+    cargoPlace: record.cargoPlace,
     barcode: record.barcode,
-    description: '',         // Колонка 8 под Python / формулы
-    category1: '',           // Колонка 9
-    category2: '',           // Колонка 10
-    compensationPrice: '',   // Колонка 11
-    problem: record.problem, // Колонка 12
-    qty: record.qty          // Колонка 13
+    description: '',         // Колонка 9 под Python / формулы
+    category1: '',           // Колонка 10
+    category2: '',           // Колонка 11
+    compensationPrice: '',   // Колонка 12
+    problem: record.problem, // Колонка 13
+    qty: record.qty          // Колонка 14
   };
 
   // Мгновенный оптимистичный UX: проигрываем победный звук и добавляем в историю
   playSound('success');
   addRecordToHistory(recordPayload);
-  showToast(`✅ Зафиксировано: ${record.problem} (${record.barcode})`, 'success');
-  resetItemForm();
+  showToast(`✅ ГМ: ${record.cargoPlace} • ${record.problem} (${record.barcode})`, 'success');
+  resetItemForm(true); // Сохраняем текущее грузоместо для фиксации следующих товаров
   elements.itemBarcodeInput.focus();
 
   // Отправка в Google Apps Script
@@ -663,6 +744,7 @@ function submitProblemRecord(record) {
     employeeId: recordPayload.employeeId,
     employeeName: recordPayload.employeeName,
     sortingWall: recordPayload.sortingWall,
+    cargoPlace: recordPayload.cargoPlace,
     barcode: recordPayload.barcode,
     description: recordPayload.description,
     category1: recordPayload.category1,
@@ -771,7 +853,10 @@ function renderHistoryList() {
     div.innerHTML = `
       <div class="history-item-left">
         <span class="history-barcode">${item.barcode}</span>
-        <span class="history-reason">${item.problem}</span>
+        <div style="display: flex; gap: 8px; font-size: 12px; align-items: center;">
+          ${item.cargoPlace ? `<span style="color: var(--text-secondary); font-family: var(--font-display); font-weight: 600;">📦 ${item.cargoPlace}</span>` : ''}
+          <span class="history-reason">${item.problem}</span>
+        </div>
       </div>
       <div class="history-item-right">
         <span class="history-qty">${item.qty} шт.</span>
