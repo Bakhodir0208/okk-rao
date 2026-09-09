@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>ОКК - РАО | Стена сортировки</title>
+
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css?v=1.0.0">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- ПЛАВАЮЩИЕ КОНТРОЛЫ (ВЕРХНИЙ ПРАВЫЙ УГОЛ) -->
+    <aside class="top-controls-bar" aria-label="Панель быстрых настроек">
+      <div id="offlineBadge" class="offline-badge" title="Офлайн-режим. Записи сохраняются локально">
+        <span>⚡</span> <span id="offlineCount">0</span> в очереди
+      </div>
+      <button id="soundToggleBtn" class="control-btn" type="button" title="Звук (вкл/выкл)" aria-label="Переключить звук">
+        <span id="soundIcon">🔊</span>
+      </button>
+      <button id="settingsBtn" class="control-btn" type="button" title="Настройки API" aria-label="Настройки подключения">
+        <span>⚙️</span>
+      </button>
+    </aside>
+
+    <!-- 1. ЭКРАН ВХОДА (АВТОРИЗАЦИЯ) -->
+    <main id="authScreen" class="screen active">
+      <section class="auth-wrapper" aria-labelledby="authHeading">
+        <div class="card">
+          <header class="brand-header">
+            <div class="brand-badge">
+              <span class="dot"></span>
+              <span>ОКК • Контроль качества</span>
+            </div>
+            <h1 id="authHeading">Фиксация РАО</h1>
+            <p>Стена сортировки складских отправлений</p>
+          </header>
+
+          <form id="authForm" novalidate>
+            <div class="input-group">
+              <label for="employeeIdInput">Табельный номер сотрудника</label>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  id="employeeIdInput"
+                  class="input-field"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="Например: 1001"
+                  required
+                  autocomplete="off"
+                  autofocus
+                >
+                <button type="button" class="clear-btn" id="clearAuthInput" aria-label="Очистить поле">&times;</button>
+              </div>
+              <div id="authError" class="error-text"></div>
+            </div>
+
+            <button type="submit" id="authSubmitBtn" class="btn btn-primary btn-block">
+              <span>Войти в систему</span>
+              <span>➜</span>
+            </button>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <!-- 2. ЭКРАН СКАНА СТЕНЫ СОРТИРОВКИ (РУЧНОЙ ВВОД ЗАБЛОКИРОВАН) -->
+    <section id="wallScanScreen" class="screen" aria-labelledby="wallScanHeading">
+      <div class="wall-scan-wrapper">
+        <div class="card">
+          <!-- Верхняя плашка пользователя -->
+          <div class="user-top-chip">
+            <div class="user-name">
+              <span>👤</span>
+              <span id="wallUserName">Сотрудник: ...</span>
+            </div>
+            <button id="logoutBtnFromWall" class="btn-text" type="button">Выйти</button>
+          </div>
+
+          <!-- Анимированная зона сканера -->
+          <div class="scanner-target-card" id="scannerTargetArea">
+            <div class="scanner-laser-beam"></div>
+            <div class="scanner-icon">🧱</div>
+            <h2 id="wallScanHeading">Сканируйте стену</h2>
+            <p>Отсканируйте штрих-код стены сортировки для привязки рабочего места</p>
+            <div class="scanner-mode-pill">
+              <span>⚡</span> Только сканер ШК (ручной ввод отключен)
+            </div>
+
+            <!-- Скрытое поле ввода для приема данных сканера -->
+            <input
+              type="text"
+              id="wallBarcodeInput"
+              class="hidden-scanner-input"
+              placeholder="Ожидание сканирования стены..."
+              autocomplete="off"
+              autofocus
+            >
+          </div>
+
+          <!-- Предупреждение при попытке ручного ввода -->
+          <div id="manualInputNotice" class="manual-block-notice">
+            <span>⚠️</span>
+            <span>Ручной ввод запрещен! Пожалуйста, используйте аппаратный сканер ШК.</span>
+          </div>
+
+          <div id="wallScanError" class="error-text"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. РАБОЧИЙ ЭКРАН ФИКСАЦИИ ПРОБЛЕМНЫХ ТОВАРОВ -->
+    <section id="workScreen" class="screen" aria-labelledby="workScreenHeading">
+      <div class="card work-card">
+
+        <!-- Шапка: активная стена + смена стены + инфо о сотруднике -->
+        <header class="work-header">
+          <div class="wall-badge-wrapper">
+            <div class="wall-chip">
+              <span class="wall-icon">🧱</span>
+              <span id="activeWallBadge" class="wall-text">Стена: ...</span>
+            </div>
+            <button id="changeWallBtn" class="btn-change-wall" type="button" title="Перейти к другой стене сортировки">
+              <span>🔄</span> Сменить стену
+            </button>
+          </div>
+          <div class="employee-badge">
+            <div id="workUserName" style="font-weight: 600; color: var(--text-primary);">...</div>
+            <div id="workUserShift" style="color: var(--text-muted);">...</div>
+          </div>
+        </header>
+
+        <!-- Форма фиксации товара -->
+        <form id="itemRecordForm" novalidate>
+
+          <!-- Поле: Штрих-код товара (строго 13 цифр) -->
+          <div class="barcode-input-container">
+            <div class="barcode-header">
+              <label for="itemBarcodeInput" id="workScreenHeading">Штрих-код товара (13 цифр)</label>
+              <div id="barcodeDigitCounter" class="barcode-counter">0 / 13</div>
+            </div>
+            <div class="input-wrapper">
+              <input
+                type="text"
+                id="itemBarcodeInput"
+                class="barcode-input-field"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                placeholder="Отсканируйте ШК товара..."
+                required
+                autocomplete="off"
+                maxlength="13"
+              >
+              <button type="button" class="clear-btn" id="clearItemBarcode" aria-label="Очистить ШК">&times;</button>
+            </div>
+            <div id="itemBarcodeError" class="error-text"></div>
+          </div>
+
+          <!-- Блок количества -->
+          <div class="qty-and-action-bar">
+            <div class="qty-label-wrap">
+              <span class="title">Количество единиц</span>
+              <span class="hint">По умолчанию: 1 шт.</span>
+            </div>
+            <div class="qty-stepper">
+              <button type="button" id="qtyMinusBtn" class="qty-btn" aria-label="Уменьшить на 1">–</button>
+              <input
+                type="number"
+                id="qtyInput"
+                class="qty-input"
+                min="1"
+                max="999"
+                value="1"
+                inputmode="numeric"
+              >
+              <button type="button" id="qtyPlusBtn" class="qty-btn" aria-label="Увеличить на 1">+</button>
+            </div>
+          </div>
+
+          <!-- Сетка выбора причины проблемы (15 кнопок) -->
+          <div class="problems-section">
+            <div class="problems-section-header">
+              <h3>Причина проблемы</h3>
+              <span class="tip">Клик отправляет фиксацию ⚡</span>
+            </div>
+
+            <div id="problemsGrid" class="problems-grid">
+              <!-- Карточки 15 причин будут сгенерированы скриптом -->
+              <div class="history-empty" style="grid-column: 1 / -1;">Загрузка причин проблем...</div>
+            </div>
+          </div>
+
+        </form>
+
+        <!-- Статусный тост / оповещение -->
+        <div id="statusToast" class="status-toast" role="status">
+          <span id="statusToastIcon">✅</span>
+          <span id="statusToastText">Готов к работе</span>
+        </div>
+
+        <!-- История последних записей -->
+        <section class="history-section" aria-labelledby="historyHeading">
+          <div class="history-header">
+            <h4 id="historyHeading">Последние фиксации сотрудника</h4>
+            <span id="historyCount" class="history-count">0 записей</span>
+          </div>
+
+          <div id="historyList" class="history-list">
+            <div class="history-empty">Здесь отобразятся отсканированные вами товары</div>
+          </div>
+        </section>
+
+      </div>
+    </section>
+
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО: НАСТРОЙКИ СЕРВЕРА APPS SCRIPT -->
+  <div id="settingsModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+    <div class="modal-card">
+      <h3 id="settingsModalTitle">Настройки Google Таблицы</h3>
+      <p>Укажите URL опубликованного веб-приложения Google Apps Script (exec) для синхронизации данных.</p>
+
+      <div class="input-group">
+        <label for="scriptUrlInput">URL Google Apps Script:</label>
+        <div class="input-wrapper">
+          <input
+            type="url"
+            id="scriptUrlInput"
+            class="input-field"
+            placeholder="https://script.google.com/macros/s/.../exec"
+          >
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="cancelSettingsBtn" class="btn btn-secondary">Отмена</button>
+        <button type="button" id="saveSettingsBtn" class="btn btn-primary">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=1.0.0"></script>
+</body>
+</html>
