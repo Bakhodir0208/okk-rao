@@ -14,7 +14,10 @@ const STORAGE_KEYS = {
   LOCAL_HISTORY: 'okk_rao_history',
   SOUND_ENABLED: 'okk_rao_sound_enabled',
   LANG: 'okk_rao_lang',
-  VERIFIED_EMPLOYEES: 'okk_rao_verified_employees'
+  VERIFIED_EMPLOYEES: 'okk_rao_verified_employees',
+  CURRENT_PROCESS: 'okk_rao_current_process',
+  INBOUND_HISTORY: 'okk_rao_inbound_history',
+  INBOUND_OFFLINE_QUEUE: 'okk_rao_inbound_offline_queue'
 };
 
 // Каталог из 15 причин проблем:
@@ -101,7 +104,33 @@ const I18N = {
     barcodeAccepted: 'ШК принят! Выберите причину проблемы ⚡',
     readyToast: 'Готов к работе',
     syncSuccess: '⚡ Синхронизировано {n} офлайн записей!',
-    savedSettings: 'Настройки URL сохранены!'
+    savedSettings: 'Настройки URL сохранены!',
+    selectProcessBadge: 'Выбор процесса',
+    processSelectHeading: 'Выберите рабочий процесс',
+    processSelectSub: 'Выберите направление для фиксации позиций',
+    shippingProcessBadge: 'Текущий процесс',
+    shippingProcessTitle: '1. Отгрузка',
+    shippingProcessDesc: 'Стена сортировки, фиксация брака и поврежденных товаров',
+    inboundProcessBadge: 'Новый процесс',
+    inboundProcessTitle: '2. Входящий поток',
+    inboundProcessDesc: 'Акты пересчета, сроки годности и фиксация ОТД',
+    changeProcess: 'Сменить процесс',
+    inboundHeaderBadge: 'Входящий поток',
+    inboundActGroupTitle: 'Данные акта и пересчета',
+    inboundGoodsGroupTitle: 'Данные товара',
+    recountDateLabel: 'Дата пересчета',
+    actNumberLabel: 'Номер акта',
+    otdFixationLabel: 'ОТД фиксация',
+    itemBarcode13Label: 'Штрих-код товара (13 цифр)',
+    expiryDateLabel: 'Срок годности (только дата)',
+    submitInboundBtn: 'Зафиксировать позицию',
+    inboundHistoryHeading: 'Последние фиксации входящего потока',
+    inboundHistoryEmpty: 'Здесь отобразятся зафиксированные позиции входящего потока',
+    inboundConfirmTitle: 'Подтверждение входящего потока',
+    enterRecountDate: 'Укажите дату пересчета',
+    enterActNumber: 'Введите номер акта',
+    enterOtdFixation: 'Укажите ОТД фиксацию',
+    enterExpiryDate: 'Укажите срок годности'
   },
   uz: {
     brandBadge: 'ОКК • Сифат назорати • РАО',
@@ -153,7 +182,33 @@ const I18N = {
     barcodeAccepted: 'ШК қабул қилинди! Муаммо сабабини танланг ⚡',
     readyToast: 'Ишга тайёр',
     syncSuccess: '⚡ {n} та офлайн ёзув синхронланди!',
-    savedSettings: 'URL созламалари сақланди!'
+    savedSettings: 'URL созламалари сақланди!',
+    selectProcessBadge: 'Жараённи танлаш',
+    processSelectHeading: 'Иш жараёнини танланг',
+    processSelectSub: 'Қайд қилиш йўналишини танланг',
+    shippingProcessBadge: 'Жорий жараён',
+    shippingProcessTitle: '1. Жўнатиш (Отгрузка)',
+    shippingProcessDesc: 'Саралаш девори, брак ва нуқсонли маҳсулотларни қайд қилиш',
+    inboundProcessBadge: 'Янги жараён',
+    inboundProcessTitle: '2. Кирувчи оқим (Входящий поток)',
+    inboundProcessDesc: 'Қайта санаш далолатномалари, яроқлилик муддати ва ОТД',
+    changeProcess: 'Жараённи алмаштириш',
+    inboundHeaderBadge: 'Кирувчи оқим',
+    inboundActGroupTitle: 'Далолатнома ва қайта санаш маълумотлари',
+    inboundGoodsGroupTitle: 'Маҳсулот маълумотлари',
+    recountDateLabel: 'Қайта санаш санаси',
+    actNumberLabel: 'Далолатнома рақами',
+    otdFixationLabel: 'ОТД фиксация',
+    itemBarcode13Label: 'Маҳсулот штрих-коди (13 рақам)',
+    expiryDateLabel: 'Яроқлилик муддати (фақат сана)',
+    submitInboundBtn: 'Маҳсулотни қайд қилиш',
+    inboundHistoryHeading: 'Кирувчи оқимнинг сўнгги қайдлари',
+    inboundHistoryEmpty: 'Бу ерда қайд қилинган кирувчи оқим маҳсулотлари кўринади',
+    inboundConfirmTitle: 'Кирувчи оқимни тасдиқлаш',
+    enterRecountDate: 'Қайта санаш санасини танланг',
+    enterActNumber: 'Далолатнома рақамини киритинг',
+    enterOtdFixation: 'ОТД фиксацияни киритинг',
+    enterExpiryDate: 'Яроқлилик муддатини танланг'
   }
 };
 
@@ -225,12 +280,16 @@ const state = {
   currentLang: localStorage.getItem(STORAGE_KEYS.LANG) || 'ru',
   currentUser: null,
   currentWall: null,
+  currentProcess: localStorage.getItem(STORAGE_KEYS.CURRENT_PROCESS) || null,
   soundEnabled: localStorage.getItem(STORAGE_KEYS.SOUND_ENABLED) !== 'false',
   problemsList: [...PROBLEMS_CATALOG],
   offlineQueue: [],
   history: [],
+  inboundOfflineQueue: [],
+  inboundHistory: [],
   isSubmitting: false,
-  pendingRecord: null
+  pendingRecord: null,
+  pendingInboundRecord: null
 };
 
 // ═══════════════════════════════════════════
@@ -348,6 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateOfflineQueueBadge();
   fetchDynamicConfig();
   syncOfflineQueue();
+  syncInboundOfflineQueue();
   checkSession();
 });
 
@@ -380,26 +440,31 @@ function setLanguage(lang) {
   if (elements.wallBarcodeInput) elements.wallBarcodeInput.placeholder = t('wallPlaceholder');
   if (elements.cargoPlaceInput) elements.cargoPlaceInput.placeholder = t('cargoPlacePlaceholder');
   if (elements.itemBarcodeInput) elements.itemBarcodeInput.placeholder = t('itemBarcodePlaceholder');
+  if (elements.inboundActNumber) elements.inboundActNumber.placeholder = state.currentLang === 'uz' ? 'Далолатнома рақамини киритинг...' : 'Введите номер акта...';
+  if (elements.inboundOtdFixation) elements.inboundOtdFixation.placeholder = state.currentLang === 'uz' ? 'ОТД киритинг ёки сканерланг...' : 'Введите или отсканируйте ОТД...';
+  if (elements.inboundBarcode) elements.inboundBarcode.placeholder = t('itemBarcodePlaceholder');
 
   // Динамические плашки
   if (state.currentWall && elements.activeWallBadge) {
     elements.activeWallBadge.textContent = `${t('wallPrefix')} ${state.currentWall}`;
   }
   if (state.currentUser) {
-    if (elements.wallUserName) {
-      elements.wallUserName.textContent = `${t('userPrefix')} ${state.currentUser.name || state.currentUser.id || '...'}`;
-    }
-    if (elements.workUserName) {
-      elements.workUserName.textContent = state.currentUser.name || `ID ${state.currentUser.id}`;
-    }
-    if (elements.workUserShift) {
-      elements.workUserShift.textContent = getLocalizedShiftName(state.currentUser.shift);
-    }
+    const userLabel = `${t('userPrefix')} ${state.currentUser.name || state.currentUser.id || '...'}`;
+    const userSimple = state.currentUser.name || `ID ${state.currentUser.id}`;
+    const userShift = getLocalizedShiftName(state.currentUser.shift);
+
+    if (elements.wallUserName) elements.wallUserName.textContent = userLabel;
+    if (elements.processUserName) elements.processUserName.textContent = userLabel;
+    if (elements.workUserName) elements.workUserName.textContent = userSimple;
+    if (elements.workUserShift) elements.workUserShift.textContent = userShift;
+    if (elements.inboundUserName) elements.inboundUserName.textContent = userSimple;
+    if (elements.inboundUserShift) elements.inboundUserShift.textContent = userShift;
   }
 
   // Обновление кнопок причин проблем и истории
   renderProblemsGrid();
   renderHistoryList();
+  renderInboundHistoryList();
 }
 
 function cacheElements() {
@@ -413,8 +478,10 @@ function cacheElements() {
 
     // Screens
     authScreen: document.getElementById('authScreen'),
+    processSelectScreen: document.getElementById('processSelectScreen'),
     wallScanScreen: document.getElementById('wallScanScreen'),
     workScreen: document.getElementById('workScreen'),
+    inboundScreen: document.getElementById('inboundScreen'),
 
     // Auth Screen
     authForm: document.getElementById('authForm'),
@@ -423,17 +490,25 @@ function cacheElements() {
     authError: document.getElementById('authError'),
     authSubmitBtn: document.getElementById('authSubmitBtn'),
 
+    // Process Select Screen
+    processUserName: document.getElementById('processUserName'),
+    logoutBtnFromProcess: document.getElementById('logoutBtnFromProcess'),
+    selectShippingBtn: document.getElementById('selectShippingBtn'),
+    selectInboundBtn: document.getElementById('selectInboundBtn'),
+
     // Wall Scan Screen
     wallUserName: document.getElementById('wallUserName'),
+    changeProcessFromWallBtn: document.getElementById('changeProcessFromWallBtn'),
     logoutBtnFromWall: document.getElementById('logoutBtnFromWall'),
     wallBarcodeInput: document.getElementById('wallBarcodeInput'),
     scannerTargetArea: document.getElementById('scannerTargetArea'),
     manualInputNotice: document.getElementById('manualInputNotice'),
     wallScanError: document.getElementById('wallScanError'),
 
-    // Work Screen
+    // Work Screen (Shipping)
     activeWallBadge: document.getElementById('activeWallBadge'),
     changeWallBtn: document.getElementById('changeWallBtn'),
+    changeProcessFromWorkBtn: document.getElementById('changeProcessFromWorkBtn'),
     workUserName: document.getElementById('workUserName'),
     workUserShift: document.getElementById('workUserShift'),
     itemRecordForm: document.getElementById('itemRecordForm'),
@@ -455,13 +530,38 @@ function cacheElements() {
     historyList: document.getElementById('historyList'),
     historyCount: document.getElementById('historyCount'),
 
+    // Inbound Screen
+    changeProcessFromInboundBtn: document.getElementById('changeProcessFromInboundBtn'),
+    inboundUserName: document.getElementById('inboundUserName'),
+    inboundUserShift: document.getElementById('inboundUserShift'),
+    inboundForm: document.getElementById('inboundForm'),
+    inboundRecountDate: document.getElementById('inboundRecountDate'),
+    inboundRecountDateError: document.getElementById('inboundRecountDateError'),
+    inboundActNumber: document.getElementById('inboundActNumber'),
+    clearInboundAct: document.getElementById('clearInboundAct'),
+    inboundActError: document.getElementById('inboundActError'),
+    inboundOtdFixation: document.getElementById('inboundOtdFixation'),
+    clearInboundOtd: document.getElementById('clearInboundOtd'),
+    inboundOtdError: document.getElementById('inboundOtdError'),
+    inboundBarcode: document.getElementById('inboundBarcode'),
+    clearInboundBarcode: document.getElementById('clearInboundBarcode'),
+    inboundBarcodeError: document.getElementById('inboundBarcodeError'),
+    inboundQtyInput: document.getElementById('inboundQtyInput'),
+    inboundQtyMinusBtn: document.getElementById('inboundQtyMinusBtn'),
+    inboundQtyPlusBtn: document.getElementById('inboundQtyPlusBtn'),
+    inboundExpiryDate: document.getElementById('inboundExpiryDate'),
+    inboundExpiryDateError: document.getElementById('inboundExpiryDateError'),
+    submitInboundBtn: document.getElementById('submitInboundBtn'),
+    inboundHistoryList: document.getElementById('inboundHistoryList'),
+    inboundHistoryCount: document.getElementById('inboundHistoryCount'),
+
     // Settings Modal
     settingsModal: document.getElementById('settingsModal'),
     scriptUrlInput: document.getElementById('scriptUrlInput'),
     cancelSettingsBtn: document.getElementById('cancelSettingsBtn'),
     saveSettingsBtn: document.getElementById('saveSettingsBtn'),
 
-    // Confirm Modal
+    // Shipping Confirm Modal
     confirmModal: document.getElementById('confirmModal'),
     confirmWall: document.getElementById('confirmWall'),
     confirmBox: document.getElementById('confirmBox'),
@@ -469,7 +569,18 @@ function cacheElements() {
     confirmProblem: document.getElementById('confirmProblem'),
     confirmQty: document.getElementById('confirmQty'),
     cancelConfirmBtn: document.getElementById('cancelConfirmBtn'),
-    submitConfirmBtn: document.getElementById('submitConfirmBtn')
+    submitConfirmBtn: document.getElementById('submitConfirmBtn'),
+
+    // Inbound Confirm Modal
+    inboundConfirmModal: document.getElementById('inboundConfirmModal'),
+    confirmInboundRecountDate: document.getElementById('confirmInboundRecountDate'),
+    confirmInboundAct: document.getElementById('confirmInboundAct'),
+    confirmInboundOtd: document.getElementById('confirmInboundOtd'),
+    confirmInboundBarcode: document.getElementById('confirmInboundBarcode'),
+    confirmInboundQty: document.getElementById('confirmInboundQty'),
+    confirmInboundExpiry: document.getElementById('confirmInboundExpiry'),
+    cancelInboundConfirmBtn: document.getElementById('cancelInboundConfirmBtn'),
+    submitInboundConfirmBtn: document.getElementById('submitInboundConfirmBtn')
   };
 }
 
@@ -477,13 +588,25 @@ function cacheElements() {
 //  УПРАВЛЕНИЕ ЭКРАНАМИ
 // ═══════════════════════════════════════════
 function showScreen(screenName) {
-  elements.authScreen.classList.remove('active');
-  elements.wallScanScreen.classList.remove('active');
-  elements.workScreen.classList.remove('active');
+  const allScreens = [
+    elements.authScreen,
+    elements.processSelectScreen,
+    elements.wallScanScreen,
+    elements.workScreen,
+    elements.inboundScreen
+  ];
+  allScreens.forEach(s => {
+    if (s) s.classList.remove('active');
+  });
 
   if (screenName === 'auth') {
     elements.authScreen.classList.add('active');
     setTimeout(() => elements.employeeIdInput?.focus(), 150);
+  } else if (screenName === 'process') {
+    elements.processSelectScreen.classList.add('active');
+    if (elements.processUserName) {
+      elements.processUserName.textContent = `${t('userPrefix')} ${state.currentUser?.name || state.currentUser?.id || '...'}`;
+    }
   } else if (screenName === 'wall') {
     elements.wallScanScreen.classList.add('active');
     elements.wallUserName.textContent = `${t('userPrefix')} ${state.currentUser?.name || state.currentUser?.id || '...'}`;
@@ -502,6 +625,25 @@ function showScreen(screenName) {
       setTimeout(() => elements.itemBarcodeInput?.focus(), 150);
     }
     loadHistory();
+  } else if (screenName === 'inbound') {
+    elements.inboundScreen.classList.add('active');
+    if (elements.inboundUserName) {
+      elements.inboundUserName.textContent = state.currentUser?.name || `ID ${state.currentUser?.id}`;
+    }
+    if (elements.inboundUserShift) {
+      elements.inboundUserShift.textContent = getLocalizedShiftName(state.currentUser?.shift);
+    }
+    if (elements.inboundRecountDate && !elements.inboundRecountDate.value) {
+      elements.inboundRecountDate.value = formatIsoDate(new Date());
+    }
+    loadInboundHistory();
+    setTimeout(() => {
+      if (elements.inboundActNumber && !elements.inboundActNumber.value) {
+        elements.inboundActNumber.focus();
+      } else if (elements.inboundBarcode) {
+        elements.inboundBarcode.focus();
+      }
+    }, 150);
   }
 }
 
@@ -655,6 +797,8 @@ function handleLogin(e) {
 
 function finalizeLogin(userData) {
   state.currentUser = userData;
+  state.currentProcess = null;
+  localStorage.removeItem(STORAGE_KEYS.CURRENT_PROCESS);
   const sessionData = {
     user: userData,
     shiftDayNight: getCanonicalShiftName(),
@@ -664,7 +808,7 @@ function finalizeLogin(userData) {
   playSound('success');
 
   fetchDynamicConfig();
-  showScreen('wall');
+  showScreen('process');
 }
 
 function checkSession() {
@@ -680,6 +824,8 @@ function checkSession() {
     // Защита от пересменки: если смена сменилась (День <-> Ночь), требуем повторный вход
     if (session.shiftDayNight && session.shiftDayNight !== currentShift) {
       localStorage.removeItem(STORAGE_KEYS.USER_SESSION);
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_PROCESS);
+      state.currentProcess = null;
       showScreen('auth');
       showAuthError(state.currentLang === 'uz' ? 'Смена якунланди. Янги смена учун қайтадан киринг.' : 'Смена завершилась. Войдите заново для новой смены.');
       return;
@@ -700,22 +846,34 @@ function checkSession() {
       }
     }
 
-    if (session.wall) {
-      state.currentWall = session.wall;
-      showScreen('work');
+    state.currentProcess = localStorage.getItem(STORAGE_KEYS.CURRENT_PROCESS) || session.currentProcess || null;
+
+    if (state.currentProcess === 'inbound') {
+      showScreen('inbound');
+    } else if (state.currentProcess === 'shipping') {
+      if (session.wall) {
+        state.currentWall = session.wall;
+        showScreen('work');
+      } else {
+        showScreen('wall');
+      }
     } else {
-      showScreen('wall');
+      showScreen('process');
     }
   } catch (e) {
     localStorage.removeItem(STORAGE_KEYS.USER_SESSION);
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_PROCESS);
+    state.currentProcess = null;
     showScreen('auth');
   }
 }
 
 function logout() {
   localStorage.removeItem(STORAGE_KEYS.USER_SESSION);
+  localStorage.removeItem(STORAGE_KEYS.CURRENT_PROCESS);
   state.currentUser = null;
   state.currentWall = null;
+  state.currentProcess = null;
   showScreen('auth');
 }
 
@@ -1146,12 +1304,14 @@ function saveOfflineQueue() {
 }
 
 function updateOfflineQueueBadge() {
-  const count = state.offlineQueue.length;
-  elements.offlineCount.textContent = count;
-  if (count > 0) {
-    elements.offlineBadge.classList.add('visible');
-  } else {
-    elements.offlineBadge.classList.remove('visible');
+  const count = state.offlineQueue.length + state.inboundOfflineQueue.length;
+  if (elements.offlineCount) elements.offlineCount.textContent = count;
+  if (elements.offlineBadge) {
+    if (count > 0) {
+      elements.offlineBadge.classList.add('visible');
+    } else {
+      elements.offlineBadge.classList.remove('visible');
+    }
   }
 }
 
@@ -1186,8 +1346,50 @@ function syncOfflineQueue() {
     });
 }
 
+function enqueueInboundOfflineRecord(record) {
+  state.inboundOfflineQueue.push(record);
+  saveInboundOfflineQueue();
+  updateOfflineQueueBadge();
+}
+
+function saveInboundOfflineQueue() {
+  localStorage.setItem(STORAGE_KEYS.INBOUND_OFFLINE_QUEUE, JSON.stringify(state.inboundOfflineQueue));
+}
+
+let isSyncingInboundQueue = false;
+
+function syncInboundOfflineQueue() {
+  if (isSyncingInboundQueue || !state.apiUrl || state.inboundOfflineQueue.length === 0 || !navigator.onLine) return;
+  isSyncingInboundQueue = true;
+
+  const recordsToSend = [...state.inboundOfflineQueue];
+  const payloadJson = JSON.stringify(recordsToSend);
+
+  const url = `${state.apiUrl}?action=addInboundRecords&recordsJson=${encodeURIComponent(payloadJson)}`;
+  fetch(url, { method: 'GET' })
+    .then(res => res.json())
+    .then(res => {
+      if (res.success) {
+        const sentIds = new Set(recordsToSend.map(r => r.clientRecordId).filter(Boolean));
+        if (sentIds.size > 0) {
+          state.inboundOfflineQueue = state.inboundOfflineQueue.filter(r => !sentIds.has(r.clientRecordId));
+        } else {
+          state.inboundOfflineQueue = [];
+        }
+        saveInboundOfflineQueue();
+        updateOfflineQueueBadge();
+        showToast(`⚡ Синхронизировано ${recordsToSend.length} офлайн записей входящего потока!`, 'success');
+      }
+    })
+    .catch(err => console.warn('Inbound offline sync retry failed:', err))
+    .finally(() => {
+      isSyncingInboundQueue = false;
+    });
+}
+
 window.addEventListener('online', () => {
   syncOfflineQueue();
+  syncInboundOfflineQueue();
 });
 
 // ═══════════════════════════════════════════
@@ -1241,6 +1443,301 @@ function renderHistoryList() {
     `;
     elements.historyList.appendChild(div);
   });
+}
+
+// ═══════════════════════════════════════════
+//  ИСТОРИЯ ВХОДЯЩЕГО ПОТОКА
+// ═══════════════════════════════════════════
+function addInboundRecordToHistory(rec) {
+  state.inboundHistory.unshift(rec);
+  if (state.inboundHistory.length > 50) state.inboundHistory.pop();
+  localStorage.setItem(STORAGE_KEYS.INBOUND_HISTORY, JSON.stringify(state.inboundHistory));
+  renderInboundHistoryList();
+}
+
+function loadInboundHistory() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.INBOUND_HISTORY);
+    if (raw) {
+      state.inboundHistory = JSON.parse(raw);
+    }
+  } catch (e) {}
+  renderInboundHistoryList();
+}
+
+function renderInboundHistoryList() {
+  if (!elements.inboundHistoryList) return;
+  elements.inboundHistoryList.innerHTML = '';
+  if (elements.inboundHistoryCount) {
+    elements.inboundHistoryCount.textContent = `${state.inboundHistory.length} ${t('recordsSuffix')}`;
+  }
+
+  if (state.inboundHistory.length === 0) {
+    elements.inboundHistoryList.innerHTML = `<div class="history-empty">${t('inboundHistoryEmpty')}</div>`;
+    return;
+  }
+
+  state.inboundHistory.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    const actLabel = state.currentLang === 'uz' ? 'Далолатнома' : 'Акт';
+    const expiryLabel = state.currentLang === 'uz' ? 'Муддати' : 'Срок';
+
+    div.innerHTML = `
+      <div class="history-item-left">
+        <span class="history-barcode">${item.barcode}</span>
+        <div style="display: flex; gap: 8px; font-size: 12px; align-items: center; flex-wrap: wrap;">
+          <span style="color: var(--text-secondary); font-family: var(--font-display); font-weight: 600;">📋 ${actLabel}: ${item.actNumber}</span>
+          ${item.otdFixation ? `<span style="color: var(--accent-color); font-weight: 600;">⚡ ОТД: ${item.otdFixation}</span>` : ''}
+          ${item.recountDate ? `<span style="color: var(--text-muted);">📅 ${item.recountDate}</span>` : ''}
+        </div>
+      </div>
+      <div class="history-item-right">
+        <span class="history-qty">${item.qty} ${t('pcs')}</span>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+          ${item.expiryDate ? `<span style="font-size: 11px; color: var(--accent-color); font-weight: 600;">⏳ ${expiryLabel}: ${item.expiryDate}</span>` : ''}
+          <span class="history-time">${item.timeStr || ''}</span>
+        </div>
+      </div>
+    `;
+    elements.inboundHistoryList.appendChild(div);
+  });
+}
+
+// ═══════════════════════════════════════════
+//  ВХОДЯЩИЙ ПОТОК: ОБРАБОТКА, ВАЛИДАЦИЯ И ОТПРАВКА
+// ═══════════════════════════════════════════
+function formatIsoDate(d) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function parseAndFormatDisplayDate(val) {
+  if (!val) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+    const parts = val.split('-');
+    return `${parts[2]}.${parts[1]}.${parts[0]}`;
+  }
+  return val;
+}
+
+function clearInboundErrors() {
+  const errorIds = [
+    'inboundRecountDateError',
+    'inboundActError',
+    'inboundOtdError',
+    'inboundBarcodeError',
+    'inboundExpiryDateError'
+  ];
+  errorIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.textContent = '';
+      el.classList.remove('visible');
+    }
+  });
+
+  const inputs = [
+    elements.inboundRecountDate,
+    elements.inboundActNumber,
+    elements.inboundOtdFixation,
+    elements.inboundBarcode,
+    elements.inboundExpiryDate
+  ];
+  inputs.forEach(inp => {
+    if (inp) {
+      inp.classList.remove('input-error');
+    }
+  });
+}
+
+function showInboundError(errId, inputEl, msg) {
+  const errEl = document.getElementById(errId);
+  if (errEl) {
+    errEl.textContent = msg;
+    errEl.classList.add('visible');
+  }
+  if (inputEl) {
+    inputEl.classList.add('input-error');
+    inputEl.focus();
+  }
+  playSound('error');
+}
+
+function handleInboundSubmit() {
+  clearInboundErrors();
+
+  const recountDate = elements.inboundRecountDate ? elements.inboundRecountDate.value.trim() : '';
+  const actNumber = elements.inboundActNumber ? autoConvertLayout(elements.inboundActNumber.value).trim() : '';
+  const otdFixation = elements.inboundOtdFixation ? autoConvertLayout(elements.inboundOtdFixation.value).trim() : '';
+  const barcode = elements.inboundBarcode ? autoConvertLayout(elements.inboundBarcode.value).replace(/\D/g, '').trim() : '';
+  const qty = elements.inboundQtyInput ? (parseInt(elements.inboundQtyInput.value, 10) || 1) : 1;
+  const expiryDate = elements.inboundExpiryDate ? elements.inboundExpiryDate.value.trim() : '';
+
+  if (!recountDate) {
+    showInboundError('inboundRecountDateError', elements.inboundRecountDate, t('enterRecountDate'));
+    return;
+  }
+  if (!actNumber) {
+    showInboundError('inboundActError', elements.inboundActNumber, t('enterActNumber'));
+    return;
+  }
+  if (!otdFixation) {
+    showInboundError('inboundOtdError', elements.inboundOtdFixation, t('enterOtdFixation'));
+    return;
+  }
+  if (!/^\d{13}$/.test(barcode)) {
+    showInboundError('inboundBarcodeError', elements.inboundBarcode, t('barcode13Err'));
+    return;
+  }
+  if (!expiryDate) {
+    showInboundError('inboundExpiryDateError', elements.inboundExpiryDate, t('enterExpiryDate'));
+    return;
+  }
+
+  openInboundConfirmModal({
+    recountDate: recountDate,
+    recountDateFormatted: parseAndFormatDisplayDate(recountDate),
+    actNumber: actNumber,
+    otdFixation: otdFixation,
+    barcode: barcode,
+    qty: qty,
+    expiryDate: expiryDate,
+    expiryDateFormatted: parseAndFormatDisplayDate(expiryDate)
+  });
+}
+
+function openInboundConfirmModal(record) {
+  state.pendingInboundRecord = record;
+
+  if (elements.confirmInboundRecountDate) {
+    elements.confirmInboundRecountDate.textContent = record.recountDateFormatted || record.recountDate || '—';
+  }
+  if (elements.confirmInboundAct) {
+    elements.confirmInboundAct.textContent = record.actNumber || '—';
+  }
+  if (elements.confirmInboundOtd) {
+    elements.confirmInboundOtd.textContent = record.otdFixation || '—';
+  }
+  if (elements.confirmInboundBarcode) {
+    elements.confirmInboundBarcode.textContent = record.barcode || '—';
+  }
+  if (elements.confirmInboundQty) {
+    elements.confirmInboundQty.textContent = `${record.qty} ${t('pcs')}`;
+  }
+  if (elements.confirmInboundExpiry) {
+    elements.confirmInboundExpiry.textContent = record.expiryDateFormatted || record.expiryDate || '—';
+  }
+
+  if (elements.inboundConfirmModal) {
+    elements.inboundConfirmModal.classList.add('active');
+    setTimeout(() => elements.submitInboundConfirmBtn?.focus(), 100);
+  }
+}
+
+function closeInboundConfirmModal() {
+  state.pendingInboundRecord = null;
+  if (elements.inboundConfirmModal) {
+    elements.inboundConfirmModal.classList.remove('active');
+  }
+}
+
+function resetInboundForm() {
+  if (elements.inboundRecountDate) elements.inboundRecountDate.value = formatIsoDate(new Date());
+  if (elements.inboundActNumber) elements.inboundActNumber.value = '';
+  if (elements.inboundOtdFixation) elements.inboundOtdFixation.value = '';
+  if (elements.inboundBarcode) {
+    elements.inboundBarcode.value = '';
+    elements.inboundBarcode.classList.remove('input-valid', 'input-error');
+  }
+  if (elements.inboundQtyInput) elements.inboundQtyInput.value = '1';
+  if (elements.inboundExpiryDate) elements.inboundExpiryDate.value = '';
+
+  clearInboundErrors();
+
+  if (elements.inboundActNumber) {
+    elements.inboundActNumber.focus();
+  }
+}
+
+function submitInboundRecord(record) {
+  if (state.isSubmitting) return;
+  state.isSubmitting = true;
+
+  const now = new Date();
+  const dateStr = formatDate(now);
+  const timeStr = formatTime(now);
+  const clientRecordId = 'inb_' + now.getTime() + '_' + Math.random().toString(36).substring(2, 9);
+
+  const recountFormatted = record.recountDateFormatted || parseAndFormatDisplayDate(record.recountDate);
+  const expiryFormatted = record.expiryDateFormatted || parseAndFormatDisplayDate(record.expiryDate);
+
+  const inboundPayload = {
+    clientRecordId: clientRecordId,
+    dateStr: dateStr,
+    timeStr: timeStr,
+    employeeId: state.currentUser?.id || '',
+    employeeName: state.currentUser?.name || '',
+    recountDate: recountFormatted,
+    actNumber: record.actNumber,
+    barcode: record.barcode,
+    qty: record.qty,
+    expiryDate: expiryFormatted,
+    otdFixation: record.otdFixation,
+    category1: '',
+    category2: '',
+    compensationPrice: ''
+  };
+
+  playSound('success');
+  addInboundRecordToHistory(inboundPayload);
+
+  showToast(`✅ Акт № ${record.actNumber} • ШК ${record.barcode} (${record.qty} ${t('pcs')})`, 'success');
+
+  // Очищаем форму ("чистим все. вносим все заново.")
+  resetInboundForm();
+
+  if (!state.apiUrl || !navigator.onLine) {
+    enqueueInboundOfflineRecord(inboundPayload);
+    state.isSubmitting = false;
+    return;
+  }
+
+  const queryParams = new URLSearchParams({
+    action: 'addInboundRecord',
+    clientRecordId: inboundPayload.clientRecordId,
+    dateStr: inboundPayload.dateStr,
+    timeStr: inboundPayload.timeStr,
+    employeeId: inboundPayload.employeeId,
+    employeeName: inboundPayload.employeeName,
+    recountDate: inboundPayload.recountDate,
+    actNumber: inboundPayload.actNumber,
+    barcode: inboundPayload.barcode,
+    qty: String(inboundPayload.qty),
+    expiryDate: inboundPayload.expiryDate,
+    otdFixation: inboundPayload.otdFixation,
+    category1: '',
+    category2: '',
+    compensationPrice: ''
+  });
+
+  fetch(`${state.apiUrl}?${queryParams.toString()}`, { method: 'GET' })
+    .then(res => res.json())
+    .then(res => {
+      if (!res.success) {
+        console.warn('Inbound server error, queueing offline:', res.message);
+        enqueueInboundOfflineRecord(inboundPayload);
+      }
+    })
+    .catch(err => {
+      console.warn('Inbound network error, queueing offline:', err);
+      enqueueInboundOfflineRecord(inboundPayload);
+    })
+    .finally(() => {
+      state.isSubmitting = false;
+    });
 }
 
 // ═══════════════════════════════════════════
@@ -1312,6 +1809,16 @@ function loadSavedState() {
     const queue = localStorage.getItem(STORAGE_KEYS.OFFLINE_QUEUE);
     if (queue) state.offlineQueue = JSON.parse(queue);
   } catch (e) {}
+
+  try {
+    const inbQueue = localStorage.getItem(STORAGE_KEYS.INBOUND_OFFLINE_QUEUE);
+    if (inbQueue) state.inboundOfflineQueue = JSON.parse(inbQueue);
+  } catch (e) {}
+
+  try {
+    const inbHist = localStorage.getItem(STORAGE_KEYS.INBOUND_HISTORY);
+    if (inbHist) state.inboundHistory = JSON.parse(inbHist);
+  } catch (e) {}
 }
 
 function initSoundToggle() {
@@ -1335,6 +1842,203 @@ function updateSoundUI() {
 }
 
 // ═══════════════════════════════════════════
+//  СЛУШАТЕЛИ ВЫБОРА ПРОЦЕССА
+// ═══════════════════════════════════════════
+function setupProcessSelectListeners() {
+  if (elements.selectShippingBtn) {
+    elements.selectShippingBtn.addEventListener('click', () => {
+      state.currentProcess = 'shipping';
+      localStorage.setItem(STORAGE_KEYS.CURRENT_PROCESS, 'shipping');
+      if (state.currentWall) {
+        showScreen('work');
+      } else {
+        showScreen('wall');
+      }
+    });
+  }
+
+  if (elements.selectInboundBtn) {
+    elements.selectInboundBtn.addEventListener('click', () => {
+      state.currentProcess = 'inbound';
+      localStorage.setItem(STORAGE_KEYS.CURRENT_PROCESS, 'inbound');
+      showScreen('inbound');
+    });
+  }
+
+  if (elements.logoutBtnFromProcess) {
+    elements.logoutBtnFromProcess.addEventListener('click', logout);
+  }
+
+  const changeProcessButtons = [
+    elements.changeProcessFromWallBtn,
+    elements.changeProcessFromWorkBtn,
+    elements.changeProcessFromInboundBtn
+  ];
+
+  changeProcessButtons.forEach(btn => {
+    if (btn) {
+      btn.addEventListener('click', () => {
+        state.currentProcess = null;
+        localStorage.removeItem(STORAGE_KEYS.CURRENT_PROCESS);
+        showScreen('process');
+      });
+    }
+  });
+}
+
+// ═══════════════════════════════════════════
+//  СЛУШАТЕЛИ ЭКРАНА ВХОДЯЩЕГО ПОТОКА
+// ═══════════════════════════════════════════
+function setupInboundListeners() {
+  // Очистка полей
+  if (elements.clearInboundAct) {
+    elements.clearInboundAct.addEventListener('click', () => {
+      elements.inboundActNumber.value = '';
+      const err = document.getElementById('inboundActError');
+      if (err) err.classList.remove('visible');
+      elements.inboundActNumber.classList.remove('input-error');
+      elements.inboundActNumber.focus();
+    });
+  }
+
+  if (elements.clearInboundOtd) {
+    elements.clearInboundOtd.addEventListener('click', () => {
+      elements.inboundOtdFixation.value = '';
+      const err = document.getElementById('inboundOtdError');
+      if (err) err.classList.remove('visible');
+      elements.inboundOtdFixation.classList.remove('input-error');
+      elements.inboundOtdFixation.focus();
+    });
+  }
+
+  if (elements.clearInboundBarcode) {
+    elements.clearInboundBarcode.addEventListener('click', () => {
+      elements.inboundBarcode.value = '';
+      elements.inboundBarcode.classList.remove('input-valid', 'input-error');
+      const err = document.getElementById('inboundBarcodeError');
+      if (err) err.classList.remove('visible');
+      elements.inboundBarcode.focus();
+    });
+  }
+
+  // Управление количеством
+  if (elements.inboundQtyMinusBtn) {
+    elements.inboundQtyMinusBtn.addEventListener('click', () => {
+      let val = parseInt(elements.inboundQtyInput.value, 10) || 1;
+      if (val > 1) elements.inboundQtyInput.value = val - 1;
+    });
+  }
+
+  if (elements.inboundQtyPlusBtn) {
+    elements.inboundQtyPlusBtn.addEventListener('click', () => {
+      let val = parseInt(elements.inboundQtyInput.value, 10) || 1;
+      if (val < 999) elements.inboundQtyInput.value = val + 1;
+    });
+  }
+
+  // Автоконвертация раскладки при вводе
+  if (elements.inboundActNumber) {
+    elements.inboundActNumber.addEventListener('input', () => {
+      elements.inboundActNumber.value = autoConvertLayout(elements.inboundActNumber.value);
+      const err = document.getElementById('inboundActError');
+      if (err) err.classList.remove('visible');
+      elements.inboundActNumber.classList.remove('input-error');
+    });
+  }
+
+  if (elements.inboundOtdFixation) {
+    elements.inboundOtdFixation.addEventListener('input', () => {
+      elements.inboundOtdFixation.value = autoConvertLayout(elements.inboundOtdFixation.value);
+      const err = document.getElementById('inboundOtdError');
+      if (err) err.classList.remove('visible');
+      elements.inboundOtdFixation.classList.remove('input-error');
+    });
+  }
+
+  if (elements.inboundBarcode) {
+    elements.inboundBarcode.addEventListener('input', () => {
+      const converted = autoConvertLayout(elements.inboundBarcode.value).replace(/\D/g, '');
+      elements.inboundBarcode.value = converted;
+      const err = document.getElementById('inboundBarcodeError');
+      if (err) err.classList.remove('visible');
+
+      if (converted.length === 13) {
+        elements.inboundBarcode.classList.remove('input-error');
+        elements.inboundBarcode.classList.add('input-valid');
+      } else {
+        elements.inboundBarcode.classList.remove('input-valid');
+        if (converted.length > 13) {
+          elements.inboundBarcode.classList.add('input-error');
+        }
+      }
+    });
+
+    elements.inboundBarcode.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const code = elements.inboundBarcode.value.trim();
+        if (code.length !== 13) {
+          showInboundError('inboundBarcodeError', elements.inboundBarcode, t('barcode13Err'));
+        } else {
+          if (!elements.inboundExpiryDate.value) {
+            elements.inboundExpiryDate.focus();
+          } else {
+            handleInboundSubmit();
+          }
+        }
+      }
+    });
+  }
+
+  if (elements.inboundExpiryDate) {
+    elements.inboundExpiryDate.addEventListener('change', () => {
+      const err = document.getElementById('inboundExpiryDateError');
+      if (err) err.classList.remove('visible');
+      elements.inboundExpiryDate.classList.remove('input-error');
+    });
+  }
+
+  if (elements.inboundRecountDate) {
+    elements.inboundRecountDate.addEventListener('change', () => {
+      const err = document.getElementById('inboundRecountDateError');
+      if (err) err.classList.remove('visible');
+      elements.inboundRecountDate.classList.remove('input-error');
+    });
+  }
+
+  // Отправка формы входящего потока
+  if (elements.inboundForm) {
+    elements.inboundForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleInboundSubmit();
+    });
+  }
+
+  // Модалка подтверждения входящего потока
+  if (elements.cancelInboundConfirmBtn) {
+    elements.cancelInboundConfirmBtn.addEventListener('click', closeInboundConfirmModal);
+  }
+
+  if (elements.submitInboundConfirmBtn) {
+    elements.submitInboundConfirmBtn.addEventListener('click', () => {
+      if (state.pendingInboundRecord) {
+        const rec = state.pendingInboundRecord;
+        closeInboundConfirmModal();
+        submitInboundRecord(rec);
+      }
+    });
+  }
+
+  if (elements.inboundConfirmModal) {
+    elements.inboundConfirmModal.addEventListener('click', (e) => {
+      if (e.target === elements.inboundConfirmModal) {
+        closeInboundConfirmModal();
+      }
+    });
+  }
+}
+
+// ═══════════════════════════════════════════
 //  СЛУШАТЕЛИ СОБЫТИЙ И НАСТРОЙКИ
 // ═══════════════════════════════════════════
 function setupEventListeners() {
@@ -1349,11 +2053,17 @@ function setupEventListeners() {
   // Выход
   elements.logoutBtnFromWall.addEventListener('click', logout);
 
+  // Выбор процесса
+  setupProcessSelectListeners();
+
   // Сканер стены
   setupWallScannerListener();
 
-  // Рабочий экран
+  // Рабочий экран отгрузки
   setupWorkScreenListeners();
+
+  // Рабочий экран входящего потока
+  setupInboundListeners();
 
   // Модалка настроек
   elements.settingsBtn.addEventListener('click', () => {
@@ -1374,6 +2084,7 @@ function setupEventListeners() {
     if (newUrl) {
       fetchDynamicConfig();
       syncOfflineQueue();
+      syncInboundOfflineQueue();
     }
   });
 
@@ -1385,7 +2096,7 @@ function setupEventListeners() {
     });
   });
 
-  // Модалка подтверждения фиксации
+  // Модалка подтверждения фиксации отгрузки
   if (elements.cancelConfirmBtn) {
     elements.cancelConfirmBtn.addEventListener('click', () => {
       closeConfirmModal();
@@ -1413,7 +2124,23 @@ function setupEventListeners() {
 
   // Глобальный перехват ввода со сканера UROVO-R70 (режим клавиатуры)
   document.addEventListener('keydown', (e) => {
-    // 0. Если открыта модалка подтверждения: Enter отправляет, Escape закрывает
+    // 0. Если открыта модалка подтверждения входящего потока
+    if (elements.inboundConfirmModal && elements.inboundConfirmModal.classList.contains('active')) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeInboundConfirmModal();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (state.pendingInboundRecord) {
+          const rec = state.pendingInboundRecord;
+          closeInboundConfirmModal();
+          submitInboundRecord(rec);
+        }
+      }
+      return;
+    }
+
+    // 0.1 Если открыта модалка подтверждения отгрузки: Enter отправляет, Escape закрывает
     if (elements.confirmModal && elements.confirmModal.classList.contains('active')) {
       if (e.key === 'Escape') {
         e.preventDefault();
@@ -1430,24 +2157,42 @@ function setupEventListeners() {
     }
 
     if (e.key === 'Escape' || e.key.startsWith('F') || e.ctrlKey || e.altKey || e.metaKey) return;
-    if (elements.settingsModal.classList.contains('active')) return;
+    if (elements.settingsModal && elements.settingsModal.classList.contains('active')) return;
 
     const activeEl = document.activeElement;
 
     // 1. Экран сканирования стены
-    if (elements.wallScanScreen.classList.contains('active')) {
+    if (elements.wallScanScreen && elements.wallScanScreen.classList.contains('active')) {
       if (activeEl !== elements.wallBarcodeInput) {
         elements.wallBarcodeInput.focus();
       }
     }
-    // 2. Рабочий экран фиксации
-    else if (elements.workScreen.classList.contains('active')) {
+    // 2. Рабочий экран фиксации отгрузки
+    else if (elements.workScreen && elements.workScreen.classList.contains('active')) {
       const isInput = (activeEl === elements.cargoPlaceInput || activeEl === elements.itemBarcodeInput || activeEl === elements.qtyInput);
       if (!isInput) {
         if (!elements.cargoPlaceInput.value.trim()) {
           elements.cargoPlaceInput.focus();
         } else {
           elements.itemBarcodeInput.focus();
+        }
+      }
+    }
+    // 3. Рабочий экран входящего потока
+    else if (elements.inboundScreen && elements.inboundScreen.classList.contains('active')) {
+      const isInboundInput = (
+        activeEl === elements.inboundRecountDate ||
+        activeEl === elements.inboundActNumber ||
+        activeEl === elements.inboundOtdFixation ||
+        activeEl === elements.inboundBarcode ||
+        activeEl === elements.inboundQtyInput ||
+        activeEl === elements.inboundExpiryDate
+      );
+      if (!isInboundInput) {
+        if (!elements.inboundActNumber.value.trim()) {
+          elements.inboundActNumber.focus();
+        } else {
+          elements.inboundBarcode.focus();
         }
       }
     }

@@ -32,7 +32,7 @@ function handleRequest(e) {
   var lockAcquired = false;
 
   try {
-    if (action === "addRecord" || action === "addRecords") {
+    if (action === "addRecord" || action === "addRecords" || action === "addInboundRecord" || action === "addInboundRecords") {
       lockAcquired = lock.tryLock(30000);
       if (!lockAcquired) {
         return ContentService.createTextOutput(JSON.stringify({
@@ -270,6 +270,191 @@ function handleRequest(e) {
         success: true,
         logs: userLogs
       };
+
+    // 5. ДОБАВЛЕНИЕ ЗАПИСИ ВХОДЯЩЕГО ПОТОКА (ОДИНОЧНАЯ ИЛИ ПАКЕТ ОФЛАЙН-ОЧЕРЕДИ)
+    } else if (action === "addInboundRecord" || action === "addInboundRecords") {
+      var inboundSheetName = "Фиксация входящего потока";
+      var inboundSheet = ss.getSheetByName(inboundSheetName);
+      if (!inboundSheet || inboundSheet.getLastRow() === 0) {
+        setupSheet();
+        inboundSheet = ss.getSheetByName(inboundSheetName);
+      }
+      var cache = CacheService.getScriptCache();
+      var empMap = getEmployeeMap(ss);
+
+      var timestamp = new Date();
+      var tz = Session.getScriptTimeZone();
+      var defaultDateStr = Utilities.formatDate(timestamp, tz, "dd.MM.yyyy");
+      var defaultTimeStr = Utilities.formatDate(timestamp, tz, "HH:mm:ss");
+
+      if (action === "addInboundRecords" && parameter.recordsJson) {
+        var records = JSON.parse(parameter.recordsJson);
+        var rows = [];
+        var processedIds = [];
+
+        for (var r = 0; r < records.length; r++) {
+          var rec = records[r];
+          var rId = String(rec.clientRecordId || "").trim();
+
+          // 1. Проверка по уникальному ID в кэше
+          if (rId && cache.get("inbound_" + rId)) {
+            continue;
+          }
+
+          var recDate = rec.dateStr || defaultDateStr;
+          var recTime = rec.timeStr || defaultTimeStr;
+          var recEmpId = String(rec.employeeId || parameter.employeeId || "").trim();
+          var recRecountDate = String(rec.recountDate || "").trim();
+          var recAct = String(rec.actNumber || "").trim();
+          var recBarcode = String(rec.barcode || "").trim();
+          var recQty = Number(rec.qty || 1);
+          var recExpiry = String(rec.expiryDate || "").trim();
+          var recOtd = String(rec.otdFixation || "").trim();
+
+          // 2. Дедупликация по последним строкам листа входящего потока
+          if (isRecentInboundDuplicate(inboundSheet, recDate, recEmpId, recAct, recBarcode, recOtd, recTime)) {
+            if (rId) cache.put("inbound_" + rId, "1", 21600);
+            continue;
+          }
+
+          var officialEmp = empMap[recEmpId];
+          var finalEmpName = (officialEmp && officialEmp.name)
+            ? officialEmp.name
+            : (rec.employeeName || parameter.employeeName || "");
+
+          rows.push([
+            recDate,                                 // 1. Дата операции
+            recTime,                                 // 2. Время операции
+            recEmpId,                                // 3. wms_id Сотрудника
+            finalEmpName,                            // 4. ФИО сотрудника
+            recRecountDate,                          // 5. Дата пересчета
+            recAct,                                  // 6. Номер акта
+            recBarcode,                              // 7. ШК товара
+            recQty,                                  // 8. Кол-во
+            recExpiry,                               // 9. Срок годности
+            recOtd,                                  // 10. ОТД фиксация
+            rec.category1 || "",                     // 11. Категория 1
+            rec.category2 || "",                     // 12. Категория 2
+            rec.compensationPrice || ""              // 13. Цена компенсации
+          ]);
+
+          if (rId) processedIds.push(rId);
+        }
+
+        if (rows.length > 0) {
+          var lastRow = inboundSheet.getLastRow();
+          inboundSheet.getRange(lastRow + 1, 1, rows.length, 13).setValues(rows);
+
+          for (var p = 0; p < processedIds.length; p++) {
+            cache.put("inbound_" + processedIds[p], "1", 21600);
+          }
+        }
+
+        response = {
+          success: true,
+          message: "Синхронизировано " + rows.length + " записей входящего потока"
+        };
+
+      } else {
+        // Одиночная запись входящего потока
+        var clientRecordId = String(parameter.clientRecordId || "").trim();
+
+        if (clientRecordId && cache.get("inbound_" + clientRecordId)) {
+          response = {
+            success: true,
+            duplicate: true,
+            message: "Запись входящего потока уже зафиксирована ранее (кэш)"
+          };
+        } else {
+          var opDate = parameter.dateStr || defaultDateStr;
+          var opTime = parameter.timeStr || defaultTimeStr;
+          var empId = String(parameter.employeeId || "").trim();
+          var recountDate = String(parameter.recountDate || "").trim();
+          var actNumber = String(parameter.actNumber || "").trim();
+          var barcode = String(parameter.barcode || "").trim();
+          var qty = Number(parameter.qty || 1);
+          var expiryDate = String(parameter.expiryDate || "").trim();
+          var otdFixation = String(parameter.otdFixation || "").trim();
+
+          if (isRecentInboundDuplicate(inboundSheet, opDate, empId, actNumber, barcode, otdFixation, opTime)) {
+            if (clientRecordId) cache.put("inbound_" + clientRecordId, "1", 21600);
+            response = {
+              success: true,
+              duplicate: true,
+              message: "Запись входящего потока уже добавлена ранее (дедупликация)"
+            };
+          } else {
+            var officialEmp = empMap[empId];
+            var finalEmpName = (officialEmp && officialEmp.name)
+              ? officialEmp.name
+              : (parameter.employeeName || "");
+
+            var newRow = [
+              opDate,                                 // 1. Дата операции
+              opTime,                                 // 2. Время операции
+              empId,                                  // 3. wms_id Сотрудника
+              finalEmpName,                           // 4. ФИО сотрудника
+              recountDate,                            // 5. Дата пересчета
+              actNumber,                              // 6. Номер акта
+              barcode,                                // 7. ШК товара
+              qty,                                    // 8. Кол-во
+              expiryDate,                             // 9. Срок годности
+              otdFixation,                            // 10. ОТД фиксация
+              parameter.category1 || "",              // 11. Категория 1
+              parameter.category2 || "",              // 12. Категория 2
+              parameter.compensationPrice || ""       // 13. Цена компенсации
+            ];
+
+            var lastRow = inboundSheet.getLastRow();
+            inboundSheet.getRange(lastRow + 1, 1, 1, 13).setValues([newRow]);
+
+            if (clientRecordId) {
+              cache.put("inbound_" + clientRecordId, "1", 21600);
+            }
+
+            response = {
+              success: true,
+              message: "Фиксация входящего потока успешно добавлена"
+            };
+          }
+        }
+      }
+
+    // 6. ИСТОРИЯ ВХОДЯЩЕГО ПОТОКА СОТРУДНИКА
+    } else if (action === "getInboundHistory") {
+      var inboundSheet = ss.getSheetByName("Фиксация входящего потока");
+      var lastRow = inboundSheet ? inboundSheet.getLastRow() : 0;
+      var employeeId = String(parameter.employeeId || "").trim();
+      var userLogs = [];
+
+      if (lastRow > 1) {
+        var maxRowsToRead = 300;
+        var startRow = Math.max(2, lastRow - maxRowsToRead + 1);
+        var numRows = lastRow - startRow + 1;
+
+        var logData = inboundSheet.getRange(startRow, 1, numRows, 13).getValues();
+
+        for (var i = logData.length - 1; i >= 0; i--) {
+          if (String(logData[i][2]).trim() === employeeId) {
+            userLogs.push({
+              date: logData[i][0],
+              time: logData[i][1],
+              recountDate: logData[i][4],
+              actNumber: logData[i][5],
+              barcode: logData[i][6],
+              qty: logData[i][7],
+              expiryDate: logData[i][8],
+              otdFixation: logData[i][9]
+            });
+          }
+          if (userLogs.length >= 25) break;
+        }
+      }
+
+      response = {
+        success: true,
+        logs: userLogs
+      };
     }
 
   } catch (err) {
@@ -371,13 +556,59 @@ function isRecentDuplicate(logSheet, dateStr, employeeId, cargoPlace, barcode, p
   return false;
 }
 
+// Проверка на недавний дубликат в листе "Фиксация входящего потока"
+function isRecentInboundDuplicate(sheet, dateStr, employeeId, actNumber, barcode, otdFixation, timeStr) {
+  if (!sheet) return false;
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return false;
+
+  var checkCount = Math.min(50, lastRow - 1);
+  var startRow = lastRow - checkCount + 1;
+  var recentValues = sheet.getRange(startRow, 1, checkCount, 13).getValues();
+
+  var cleanDate = String(dateStr || "").trim();
+  var cleanEmpId = String(employeeId || "").trim();
+  var cleanAct = String(actNumber || "").trim();
+  var cleanBarcode = String(barcode || "").trim();
+  var cleanOtd = String(otdFixation || "").trim();
+  var targetSec = parseTimeToSeconds(timeStr);
+
+  var tz = Session.getScriptTimeZone();
+
+  for (var i = recentValues.length - 1; i >= 0; i--) {
+    var row = recentValues[i];
+    var rDate = (row[0] instanceof Date)
+      ? Utilities.formatDate(row[0], tz, "dd.MM.yyyy")
+      : String(row[0] || "").trim();
+
+    var rEmpId = String(row[2] || "").trim();
+    var rAct = String(row[5] || "").trim();
+    var rBarcode = String(row[6] || "").trim();
+    var rOtd = String(row[9] || "").trim();
+
+    if (rDate === cleanDate && rEmpId === cleanEmpId && rAct === cleanAct && rBarcode === cleanBarcode && rOtd === cleanOtd) {
+      var rSec = parseTimeToSeconds(row[1]);
+      if (targetSec !== null && rSec !== null) {
+        var diff = Math.abs(targetSec - rSec);
+        if (diff <= 300) {
+          return true;
+        }
+      } else {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 // Автоматическая проверка и настройка листов при первом вызове
 function autoSetupIfNeeded(ss) {
   var empSheet = ss.getSheetByName("Employees");
   var configSheet = ss.getSheetByName("Config");
   var logSheet = ss.getSheetByName("Log");
+  var inboundSheet = ss.getSheetByName("Фиксация входящего потока");
 
-  if (!empSheet || !configSheet || !logSheet) {
+  if (!empSheet || !configSheet || !logSheet || !inboundSheet || inboundSheet.getLastRow() === 0) {
     setupSheet();
   }
 }
@@ -437,7 +668,7 @@ function setupSheet() {
     configSheet.autoResizeColumns(1, 3);
   }
 
-  // 3. Лист Log (14 утвержденных колонок)
+  // 3. Лист Log (14 утвержденных колонок для Отгрузки)
   var logSheet = ss.getSheetByName("Log");
   if (!logSheet) {
     logSheet = ss.insertSheet("Log");
@@ -463,6 +694,42 @@ function setupSheet() {
       .setFontColor("#ffffff")
       .setFontWeight("bold");
     logSheet.autoResizeColumns(1, 14);
+  }
+
+  // 4. Лист Фиксация входящего потока (13 колонок)
+  var inboundSheetName = "Фиксация входящего потока";
+  var inboundSheet = ss.getSheetByName(inboundSheetName);
+  var inboundHeaders = [
+    "Дата операции",
+    "Время операции",
+    "wms_id Сотрудника",
+    "ФИО сотрудника",
+    "Дата пересчета",
+    "Номер акта",
+    "ШК товара",
+    "Кол-во",
+    "Срок годности",
+    "ОТД фиксация",
+    "Категория 1",
+    "Категория 2",
+    "Цена компенсации"
+  ];
+
+  if (!inboundSheet) {
+    inboundSheet = ss.insertSheet(inboundSheetName);
+    inboundSheet.appendRow(inboundHeaders);
+    inboundSheet.getRange("A1:M1")
+      .setBackground("#7000ff")
+      .setFontColor("#ffffff")
+      .setFontWeight("bold");
+    inboundSheet.autoResizeColumns(1, 13);
+  } else if (inboundSheet.getLastRow() === 0) {
+    inboundSheet.appendRow(inboundHeaders);
+    inboundSheet.getRange("A1:M1")
+      .setBackground("#7000ff")
+      .setFontColor("#ffffff")
+      .setFontWeight("bold");
+    inboundSheet.autoResizeColumns(1, 13);
   }
 
   var defaultSheet = ss.getSheetByName("Sheet1") || ss.getSheetByName("Лист1");

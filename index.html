@@ -92,7 +92,60 @@
       </section>
     </main>
 
-    <!-- 2. ЭКРАН СКАНА СТЕНЫ СОРТИРОВКИ (РУЧНОЙ ВВОД ЗАБЛОКИРОВАН) -->
+    <!-- 2. ЭКРАН ВЫБОРА ПРОЦЕССА (ОТГРУЗКА ИЛИ ВХОДЯЩИЙ ПОТОК) -->
+    <section id="processSelectScreen" class="screen" aria-labelledby="processSelectHeading">
+      <div class="process-select-wrapper">
+        <div class="card process-select-card">
+          <!-- Верхняя плашка пользователя -->
+          <div class="user-top-chip">
+            <div class="user-name">
+              <span>👤</span>
+              <span id="processUserName">Сотрудник: ...</span>
+            </div>
+            <button id="logoutBtnFromProcess" class="btn-text" type="button" data-i18n="logout">Выйти</button>
+          </div>
+
+          <header class="process-header">
+            <div class="brand-badge">
+              <span class="dot"></span>
+              <span data-i18n="selectProcessBadge">Выбор процесса</span>
+            </div>
+            <h2 id="processSelectHeading" data-i18n="processSelectHeading">Выберите рабочий процесс</h2>
+            <p class="process-subtitle" data-i18n="processSelectSub">Выберите направление для фиксации позиций</p>
+          </header>
+
+          <div class="process-cards-grid">
+            <!-- Блок 1: Отгрузка (Стена сортировки) -->
+            <button type="button" class="process-choice-card" id="selectShippingBtn">
+              <div class="process-card-icon-wrap shipping-glow">
+                <span class="process-card-icon">🧱</span>
+              </div>
+              <div class="process-card-content">
+                <div class="process-card-tag" data-i18n="shippingProcessBadge">Текущий процесс</div>
+                <h3 class="process-card-title" data-i18n="shippingProcessTitle">1. Отгрузка</h3>
+                <p class="process-card-desc" data-i18n="shippingProcessDesc">Стена сортировки, фиксация брака и поврежденных товаров</p>
+              </div>
+              <span class="process-card-arrow">➜</span>
+            </button>
+
+            <!-- Блок 2: Входящий поток -->
+            <button type="button" class="process-choice-card" id="selectInboundBtn">
+              <div class="process-card-icon-wrap inbound-glow">
+                <span class="process-card-icon">📥</span>
+              </div>
+              <div class="process-card-content">
+                <div class="process-card-tag inbound-tag" data-i18n="inboundProcessBadge">Новый процесс</div>
+                <h3 class="process-card-title" data-i18n="inboundProcessTitle">2. Входящий поток</h3>
+                <p class="process-card-desc" data-i18n="inboundProcessDesc">Акты пересчета, сроки годности и фиксация ОТД</p>
+              </div>
+              <span class="process-card-arrow">➜</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. ЭКРАН СКАНА СТЕНЫ СОРТИРОВКИ (РУЧНОЙ ВВОД ЗАБЛОКИРОВАН) -->
     <section id="wallScanScreen" class="screen" aria-labelledby="wallScanHeading">
       <div class="wall-scan-wrapper">
         <div class="card">
@@ -102,7 +155,10 @@
               <span>👤</span>
               <span id="wallUserName">Сотрудник: ...</span>
             </div>
-            <button id="logoutBtnFromWall" class="btn-text" type="button" data-i18n="logout">Выйти</button>
+            <div style="display: flex; gap: 8px;">
+              <button id="changeProcessFromWallBtn" class="btn-text" type="button" data-i18n="changeProcess">Сменить процесс</button>
+              <button id="logoutBtnFromWall" class="btn-text" type="button" data-i18n="logout">Выйти</button>
+            </div>
           </div>
 
           <!-- Анимированная зона сканера -->
@@ -137,7 +193,7 @@
       </div>
     </section>
 
-    <!-- 3. РАБОЧИЙ ЭКРАН ФИКСАЦИИ ПРОБЛЕМНЫХ ТОВАРОВ -->
+    <!-- 4. РАБОЧИЙ ЭКРАН ФИКСАЦИИ ПРОБЛЕМНЫХ ТОВАРОВ (ОТГРУЗКА) -->
     <section id="workScreen" class="screen" aria-labelledby="workScreenHeading">
       <div class="card work-card">
 
@@ -150,6 +206,9 @@
             </div>
             <button id="changeWallBtn" class="btn-change-wall" type="button" title="Перейти к другой стене сортировки">
               <span>🔄</span> <span id="changeWallBtnText" data-i18n="changeWall">Сменить стену</span>
+            </button>
+            <button id="changeProcessFromWorkBtn" class="btn-change-wall" type="button" title="К выбору направления">
+              <span>📋</span> <span data-i18n="changeProcess">Сменить процесс</span>
             </button>
           </div>
           <div class="employee-badge">
@@ -259,9 +318,177 @@
       </div>
     </section>
 
+    <!-- 5. РАБОЧИЙ ЭКРАН ВХОДЯЩЕГО ПОТОКА -->
+    <section id="inboundScreen" class="screen" aria-labelledby="inboundScreenHeading">
+      <div class="card work-card inbound-card">
+
+        <!-- Шапка: активный процесс + кнопка смены процесса + инфо о сотруднике -->
+        <header class="work-header">
+          <div class="wall-badge-wrapper">
+            <div class="wall-chip inbound-chip">
+              <span class="wall-icon">📥</span>
+              <span class="wall-text" data-i18n="inboundHeaderBadge">Входящий поток</span>
+            </div>
+            <button id="changeProcessFromInboundBtn" class="btn-change-wall" type="button" title="Сменить рабочий процесс">
+              <span>🔄</span> <span data-i18n="changeProcess">Сменить процесс</span>
+            </button>
+          </div>
+          <div class="employee-badge">
+            <div id="inboundUserName" style="font-weight: 600; color: var(--text-primary);">...</div>
+            <div id="inboundUserShift" style="color: var(--text-muted);">...</div>
+          </div>
+        </header>
+
+        <!-- Форма фиксации входящего потока -->
+        <form id="inboundForm" novalidate>
+
+          <!-- Блок 1: Данные акта и пересчета -->
+          <div class="inbound-group-box">
+            <div class="group-box-title">
+              <span>📋</span> <span data-i18n="inboundActGroupTitle">Данные акта и пересчета</span>
+            </div>
+
+            <div class="inbound-fields-grid">
+              <!-- Дата пересчета -->
+              <div class="barcode-input-container">
+                <label for="inboundRecountDate" data-i18n="recountDateLabel">Дата пересчета</label>
+                <div class="input-wrapper">
+                  <input
+                    type="date"
+                    id="inboundRecountDate"
+                    class="barcode-input-field date-input-field"
+                    required
+                  >
+                </div>
+                <div id="inboundRecountDateError" class="error-text"></div>
+              </div>
+
+              <!-- Номер акта -->
+              <div class="barcode-input-container">
+                <label for="inboundActNumber" data-i18n="actNumberLabel">Номер акта</label>
+                <div class="input-wrapper">
+                  <input
+                    type="text"
+                    id="inboundActNumber"
+                    class="barcode-input-field"
+                    placeholder="Введите номер акта..."
+                    required
+                    autocomplete="off"
+                  >
+                  <button type="button" class="clear-btn" id="clearInboundAct" aria-label="Очистить номер акта">&times;</button>
+                </div>
+                <div id="inboundActError" class="error-text"></div>
+              </div>
+
+              <!-- ОТД фиксация -->
+              <div class="barcode-input-container">
+                <label for="inboundOtdFixation" data-i18n="otdFixationLabel">ОТД фиксация</label>
+                <div class="input-wrapper">
+                  <input
+                    type="text"
+                    id="inboundOtdFixation"
+                    class="barcode-input-field"
+                    placeholder="Введите или отсканируйте ОТД..."
+                    required
+                    autocomplete="off"
+                  >
+                  <button type="button" class="clear-btn" id="clearInboundOtd" aria-label="Очистить ОТД">&times;</button>
+                </div>
+                <div id="inboundOtdError" class="error-text"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Блок 2: Данные товара -->
+          <div class="inbound-group-box">
+            <div class="group-box-title">
+              <span>🏷️</span> <span data-i18n="inboundGoodsGroupTitle">Данные товара</span>
+            </div>
+
+            <div class="inbound-fields-grid">
+              <!-- ШК товара (13 цифр) -->
+              <div class="barcode-input-container barcode-full-width">
+                <label for="inboundBarcode" id="inboundBarcodeLabel" data-i18n="itemBarcode13Label">Штрих-код товара (13 цифр)</label>
+                <div class="input-wrapper">
+                  <input
+                    type="text"
+                    id="inboundBarcode"
+                    class="barcode-input-field"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    placeholder="Отсканируйте ШК товара..."
+                    required
+                    autocomplete="off"
+                    maxlength="13"
+                  >
+                  <button type="button" class="clear-btn" id="clearInboundBarcode" aria-label="Очистить ШК">&times;</button>
+                </div>
+                <div id="inboundBarcodeError" class="error-text"></div>
+              </div>
+
+              <!-- Количество -->
+              <div class="qty-and-action-bar inbound-qty-bar">
+                <div class="qty-label-wrap">
+                  <span class="title" data-i18n="qtyTitle">Количество</span>
+                  <span class="hint" data-i18n="qtyHint">По умолчанию: 1 шт.</span>
+                </div>
+                <div class="qty-stepper">
+                  <button type="button" id="inboundQtyMinusBtn" class="qty-btn" aria-label="Уменьшить на 1">–</button>
+                  <input
+                    type="number"
+                    id="inboundQtyInput"
+                    class="qty-input"
+                    min="1"
+                    max="999"
+                    value="1"
+                    inputmode="numeric"
+                  >
+                  <button type="button" id="inboundQtyPlusBtn" class="qty-btn" aria-label="Увеличить на 1">+</button>
+                </div>
+              </div>
+
+              <!-- Срок годности -->
+              <div class="barcode-input-container">
+                <label for="inboundExpiryDate" data-i18n="expiryDateLabel">Срок годности (только дата)</label>
+                <div class="input-wrapper">
+                  <input
+                    type="date"
+                    id="inboundExpiryDate"
+                    class="barcode-input-field date-input-field"
+                    required
+                  >
+                </div>
+                <div id="inboundExpiryDateError" class="error-text"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Кнопка фиксации -->
+          <button type="submit" id="submitInboundBtn" class="btn btn-primary btn-block submit-inbound-btn">
+            <span data-i18n="submitInboundBtn">Зафиксировать позицию</span>
+            <span>➜</span>
+          </button>
+
+        </form>
+
+        <!-- История последних записей входящего потока -->
+        <section class="history-section" aria-labelledby="inboundHistoryHeading" style="margin-top: 24px;">
+          <div class="history-header">
+            <h4 id="inboundHistoryHeading" data-i18n="inboundHistoryHeading">Последние фиксации входящего потока</h4>
+            <span id="inboundHistoryCount" class="history-count">0 записей</span>
+          </div>
+
+          <div id="inboundHistoryList" class="history-list">
+            <div class="history-empty" id="inboundHistoryEmptyText" data-i18n="inboundHistoryEmpty">Здесь отобразятся зафиксированные позиции входящего потока</div>
+          </div>
+        </section>
+
+      </div>
+    </section>
+
   </div>
 
-  <!-- МОДАЛЬНОЕ ОКНО: ПОДТВЕРЖДЕНИЕ ФИКСАЦИИ -->
+  <!-- МОДАЛЬНОЕ ОКНО: ПОДТВЕРЖДЕНИЕ ФИКСАЦИИ ОТГРУЗКИ -->
   <div id="confirmModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
     <div class="modal-card">
       <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
@@ -296,6 +523,49 @@
       <div class="modal-actions" style="display: flex; gap: 10px; margin-top: 20px;">
         <button type="button" id="cancelConfirmBtn" class="btn btn-secondary" style="flex: 1;" data-i18n="cancel">Отмена</button>
         <button type="button" id="submitConfirmBtn" class="btn btn-primary" style="flex: 1.4;" data-i18n="send">Отправить ➜</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО: ПОДТВЕРЖДЕНИЕ ФИКСАЦИИ ВХОДЯЩЕГО ПОТОКА -->
+  <div id="inboundConfirmModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="inboundConfirmTitle">
+    <div class="modal-card">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+        <span style="font-size: 24px;">📥</span>
+        <h3 id="inboundConfirmTitle" data-i18n="inboundConfirmTitle" style="margin: 0;">Подтверждение входящего потока</h3>
+      </div>
+      <p data-i18n="confirmDesc" style="margin-bottom: 16px;">Пожалуйста, проверьте правильность данных перед отправкой:</p>
+
+      <div class="confirm-summary">
+        <div class="confirm-row">
+          <span class="confirm-label" data-i18n="recountDateLabel">📅 Дата пересчета:</span>
+          <span id="confirmInboundRecountDate" class="confirm-value">—</span>
+        </div>
+        <div class="confirm-row">
+          <span class="confirm-label" data-i18n="actNumberLabel">📋 Номер акта:</span>
+          <span id="confirmInboundAct" class="confirm-value">—</span>
+        </div>
+        <div class="confirm-row">
+          <span class="confirm-label" data-i18n="otdFixationLabel">⚡ ОТД фиксация:</span>
+          <span id="confirmInboundOtd" class="confirm-value">—</span>
+        </div>
+        <div class="confirm-row">
+          <span class="confirm-label" data-i18n="confirmBarcode">🏷️ ШК Товара:</span>
+          <span id="confirmInboundBarcode" class="confirm-value" style="color: #ffffff; letter-spacing: 1px;">—</span>
+        </div>
+        <div class="confirm-row">
+          <span class="confirm-label" data-i18n="confirmQty">🔢 Количество:</span>
+          <span id="confirmInboundQty" class="confirm-value">1 шт.</span>
+        </div>
+        <div class="confirm-row">
+          <span class="confirm-label" data-i18n="expiryDateLabel">⏳ Срок годности:</span>
+          <span id="confirmInboundExpiry" class="confirm-value" style="color: var(--accent-color);">—</span>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="display: flex; gap: 10px; margin-top: 20px;">
+        <button type="button" id="cancelInboundConfirmBtn" class="btn btn-secondary" style="flex: 1;" data-i18n="cancel">Отмена</button>
+        <button type="button" id="submitInboundConfirmBtn" class="btn btn-primary" style="flex: 1.4;" data-i18n="send">Подтвердить ➜</button>
       </div>
     </div>
   </div>
