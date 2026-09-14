@@ -13,7 +13,8 @@ const STORAGE_KEYS = {
   OFFLINE_QUEUE: 'okk_rao_offline_queue',
   LOCAL_HISTORY: 'okk_rao_history',
   SOUND_ENABLED: 'okk_rao_sound_enabled',
-  LANG: 'okk_rao_lang'
+  LANG: 'okk_rao_lang',
+  VERIFIED_EMPLOYEES: 'okk_rao_verified_employees'
 };
 
 // Каталог из 15 причин проблем:
@@ -527,6 +528,73 @@ function getLocalizedShiftName(shiftStr) {
   return raw;
 }
 
+// ═══════════════════════════════════════════
+//  КЭШ ПОДТВЕРЖДЕННЫХ СОТРУДНИКОВ И ПРОФИЛЕЙ
+// ═══════════════════════════════════════════
+function getVerifiedEmployees() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.VERIFIED_EMPLOYEES);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveVerifiedEmployee(emp) {
+  if (!emp || !emp.id || !emp.name || emp.name.startsWith('Сотрудник #')) return;
+  try {
+    const map = getVerifiedEmployees();
+    map[String(emp.id).trim()] = {
+      id: String(emp.id).trim(),
+      name: String(emp.name).trim(),
+      shift: emp.shift || getCanonicalShiftName()
+    };
+    localStorage.setItem(STORAGE_KEYS.VERIFIED_EMPLOYEES, JSON.stringify(map));
+  } catch (e) {}
+}
+
+function getVerifiedEmployee(empId) {
+  const map = getVerifiedEmployees();
+  return map[String(empId).trim()] || null;
+}
+
+function refreshUserProfile(empId) {
+  if (!state.apiUrl || !empId || !navigator.onLine) return;
+  fetch(`${state.apiUrl}?action=login&employeeId=${encodeURIComponent(empId)}&t=${Date.now()}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.name && !data.name.startsWith('Сотрудник #')) {
+        if (state.currentUser && String(state.currentUser.id) === String(empId)) {
+          state.currentUser.name = data.name;
+          if (data.shift) state.currentUser.shift = data.shift;
+          saveVerifiedEmployee(state.currentUser);
+          const raw = localStorage.getItem(STORAGE_KEYS.USER_SESSION);
+          if (raw) {
+            const sess = JSON.parse(raw);
+            sess.user = state.currentUser;
+            localStorage.setItem(STORAGE_KEYS.USER_SESSION, JSON.stringify(sess));
+          }
+          updateUserDisplay();
+        }
+      }
+    })
+    .catch(() => {});
+}
+
+function updateUserDisplay() {
+  if (state.currentUser) {
+    if (elements.wallUserName) {
+      elements.wallUserName.textContent = `${t('userPrefix')} ${state.currentUser.name || state.currentUser.id || '...'}`;
+    }
+    if (elements.workUserName) {
+      elements.workUserName.textContent = state.currentUser.name || `ID ${state.currentUser.id}`;
+    }
+    if (elements.workUserShift) {
+      elements.workUserShift.textContent = getLocalizedShiftName(state.currentUser.shift);
+    }
+  }
+}
+
 function handleLogin(e) {
   e.preventDefault();
   const rawId = elements.employeeIdInput.value.trim();
@@ -539,13 +607,10 @@ function handleLogin(e) {
   elements.authSubmitBtn.disabled = true;
   elements.authSubmitBtn.innerHTML = `<span>${t('checking')}</span>`;
 
-  // Если URL Google Apps Script не задан — режим автономной/демо работы
   if (!state.apiUrl) {
-    finalizeLogin({
-      id: rawId,
-      name: `Сотрудник #${rawId}`,
-      shift: getCanonicalShiftName() + ' (локально)'
-    });
+    showAuthError('URL Google Таблицы не указан в настройках.');
+    elements.authSubmitBtn.disabled = false;
+    elements.authSubmitBtn.innerHTML = `<span id="authSubmitText" data-i18n="authSubmitBtn">${t('authSubmitBtn')}</span> <span>➜</span>`;
     return;
   }
 
@@ -553,25 +618,34 @@ function handleLogin(e) {
   fetch(loginUrl)
     .then(res => res.json())
     .then(data => {
-      if (data.success) {
-        finalizeLogin({
-          id: rawId,
-          name: data.name || `Сотрудник #${rawId}`,
+      if (data.success && data.id && data.name && !data.name.startsWith('Сотрудник #')) {
+        const empData = {
+          id: String(data.id).trim(),
+          name: data.name.trim(),
           shift: data.shift || getCanonicalShiftName()
-        });
+        };
+        saveVerifiedEmployee(empData);
+        finalizeLogin(empData);
       } else {
-        showAuthError(t('empNotFound', { id: rawId }));
+        // Сотрудник не найден в листе Employees - ДОСТУП СТРОГО ЗАПРЕЩЕН
+        showAuthError(data.message || t('empNotFound', { id: rawId }));
         playSound('error');
       }
     })
     .catch(err => {
-      console.warn('Login request failed, fallback to local mode:', err);
-      // Если сеть недоступна, разрешаем вход локально для непрерывности работы
-      finalizeLogin({
-        id: rawId,
-        name: `Сотрудник #${rawId}`,
-        shift: getCanonicalShiftName() + ' (офлайн)'
-      });
+      console.warn('Login request failed, checking local verified cache:', err);
+      // Если сети нет, проверяем: был ли этот сотрудник ранее успешно проверен в базе листа Employees
+      const verified = getVerifiedEmployee(rawId);
+      if (verified && verified.name && !verified.name.startsWith('Сотрудник #')) {
+        showToast(state.currentLang === 'uz' ? `Офлайн кириш: ${verified.name}` : `Автономный вход: ${verified.name}`, 'warning');
+        finalizeLogin(verified);
+      } else {
+        // Посторонним или неподтвержденным вход СТРОГО ЗАПРЕЩЕН
+        showAuthError(state.currentLang === 'uz'
+          ? `Ходим «${rawId}» листда топилмади ёки тармоқ йўқ. Фақат листдаги ходимлар кира олади!`
+          : `Сотрудник «${rawId}» не найден в листе Employees либо нет связи. Доступ посторонним запрещен!`);
+        playSound('error');
+      }
     })
     .finally(() => {
       elements.authSubmitBtn.disabled = false;
@@ -612,6 +686,20 @@ function checkSession() {
     }
 
     state.currentUser = session.user;
+
+    // Защита: если в старой сохраненной сессии осталась заглушка "Сотрудник #"
+    if (state.currentUser && state.currentUser.id) {
+      if (!state.currentUser.name || state.currentUser.name.startsWith('Сотрудник #')) {
+        const verified = getVerifiedEmployee(state.currentUser.id);
+        if (verified && verified.name && !verified.name.startsWith('Сотрудник #')) {
+          state.currentUser.name = verified.name;
+          session.user = state.currentUser;
+          localStorage.setItem(STORAGE_KEYS.USER_SESSION, JSON.stringify(session));
+        }
+        refreshUserProfile(state.currentUser.id);
+      }
+    }
+
     if (session.wall) {
       state.currentWall = session.wall;
       showScreen('work');
@@ -968,8 +1056,10 @@ function submitProblemRecord(record) {
 
   // ЖЕСТКО НА РУССКОМ ЯЗЫКЕ ДЛЯ GOOGLE ТАБЛИЦЫ
   const shiftNameRu = getCanonicalShiftName();
+  const clientRecordId = 'rec_' + now.getTime() + '_' + Math.random().toString(36).substring(2, 9);
 
   const recordPayload = {
+    clientRecordId: clientRecordId,
     dateStr: dateStr,
     timeStr: timeStr,
     shiftName: shiftNameRu,                  // <-- ЖЕСТКО: "День" или "Ночь"
@@ -1008,6 +1098,7 @@ function submitProblemRecord(record) {
 
   const queryParams = new URLSearchParams({
     action: 'addRecord',
+    clientRecordId: recordPayload.clientRecordId,
     dateStr: recordPayload.dateStr,
     timeStr: recordPayload.timeStr,
     shiftName: recordPayload.shiftName,
@@ -1064,8 +1155,11 @@ function updateOfflineQueueBadge() {
   }
 }
 
+let isSyncingQueue = false;
+
 function syncOfflineQueue() {
-  if (!state.apiUrl || state.offlineQueue.length === 0 || !navigator.onLine) return;
+  if (isSyncingQueue || !state.apiUrl || state.offlineQueue.length === 0 || !navigator.onLine) return;
+  isSyncingQueue = true;
 
   const recordsToSend = [...state.offlineQueue];
   const payloadJson = JSON.stringify(recordsToSend);
@@ -1075,13 +1169,21 @@ function syncOfflineQueue() {
     .then(res => res.json())
     .then(res => {
       if (res.success) {
-        state.offlineQueue = [];
+        const sentIds = new Set(recordsToSend.map(r => r.clientRecordId).filter(Boolean));
+        if (sentIds.size > 0) {
+          state.offlineQueue = state.offlineQueue.filter(r => !sentIds.has(r.clientRecordId));
+        } else {
+          state.offlineQueue = [];
+        }
         saveOfflineQueue();
         updateOfflineQueueBadge();
         showToast(`⚡ Синхронизировано ${recordsToSend.length} офлайн записей!`, 'success');
       }
     })
-    .catch(err => console.warn('Offline sync retry failed:', err));
+    .catch(err => console.warn('Offline sync retry failed:', err))
+    .finally(() => {
+      isSyncingQueue = false;
+    });
 }
 
 window.addEventListener('online', () => {

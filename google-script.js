@@ -45,25 +45,13 @@ function handleRequest(e) {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     autoSetupIfNeeded(ss);
 
-    // 1. АВТОРИЗАЦИЯ
+    // 1. СТРОГАЯ АВТОРИЗАЦИЯ ПО БАЗЕ EMPLOYEES
     if (action === "login") {
       var employeeId = String(parameter.employeeId || "").trim();
-      var empSheet = ss.getSheetByName("Employees");
-      var empData = empSheet ? empSheet.getDataRange().getValues() : [];
+      var empMap = getEmployeeMap(ss);
+      var foundUser = empMap[employeeId];
 
-      var foundUser = null;
-      for (var i = 1; i < empData.length; i++) {
-        if (String(empData[i][0]).trim() === employeeId) {
-          foundUser = {
-            id: empData[i][0],
-            name: empData[i][1],
-            shift: empData[i][2] || "Основная смена"
-          };
-          break;
-        }
-      }
-
-      if (foundUser) {
+      if (foundUser && foundUser.name) {
         response = {
           success: true,
           id: foundUser.id,
@@ -73,7 +61,7 @@ function handleRequest(e) {
       } else {
         response = {
           success: false,
-          message: "Сотрудник с wms_id «" + employeeId + "» не найден в листе Employees"
+          message: "Сотрудник с wms_id «" + employeeId + "» не найден в листе Employees. Доступ запрещен."
         };
       }
 
@@ -99,13 +87,16 @@ function handleRequest(e) {
         problems: problems
       };
 
-    // 3. ДОБАВЛЕНИЕ ОДНОЙ ЗАПИСИ ИЛИ ПАКЕТА (ОФЛАЙН ОЧЕРЕДЬ)
+    // 3. ДОБАВЛЕНИЕ ОДНОЙ ЗАПИСИ ИЛИ ПАКЕТА (ОФЛАЙН ОЧЕРЕДЬ) С ДЕДУПЛИКАЦИЕЙ
     } else if (action === "addRecord" || action === "addRecords") {
       var logSheet = ss.getSheetByName("Log");
+      var cache = CacheService.getScriptCache();
+      var empMap = getEmployeeMap(ss);
+
       var timestamp = new Date();
       var tz = Session.getScriptTimeZone();
-      var dateStr = Utilities.formatDate(timestamp, tz, "dd.MM.yyyy");
-      var timeStr = Utilities.formatDate(timestamp, tz, "HH:mm:ss");
+      var defaultDateStr = Utilities.formatDate(timestamp, tz, "dd.MM.yyyy");
+      var defaultTimeStr = Utilities.formatDate(timestamp, tz, "HH:mm:ss");
 
       var hour = Number(Utilities.formatDate(timestamp, tz, "H"));
       var dayNight = (hour >= 9 && hour < 21) ? "День" : "Ночь";
@@ -113,61 +104,135 @@ function handleRequest(e) {
       if (action === "addRecords" && parameter.recordsJson) {
         var records = JSON.parse(parameter.recordsJson);
         var rows = [];
+        var processedIds = [];
+
         for (var r = 0; r < records.length; r++) {
           var rec = records[r];
+          var rId = String(rec.clientRecordId || "").trim();
+
+          // 1. Проверка уникального ID в кэше
+          if (rId && cache.get("rec_" + rId)) {
+            continue; // Уже обработано ранее, пропускаем дубликат
+          }
+
+          var recDate = rec.dateStr || defaultDateStr;
+          var recTime = rec.timeStr || defaultTimeStr;
+          var recEmpId = String(rec.employeeId || parameter.employeeId || "").trim();
+          var recCargo = String(rec.cargoPlace || parameter.cargoPlace || "").trim();
+          var recBarcode = String(rec.barcode || "").trim();
+          var recProb = rec.problem || "";
+
+          // 2. Проверка недавнего дубликата в листе Log
+          if (isRecentDuplicate(logSheet, recDate, recEmpId, recCargo, recBarcode, recProb, recTime)) {
+            if (rId) cache.put("rec_" + rId, "1", 21600);
+            continue; // Запись уже есть в таблице
+          }
+
+          // 3. Гарантированное ФИО сотрудника из листа Employees
+          var officialEmp = empMap[recEmpId];
+          var finalEmpName = (officialEmp && officialEmp.name)
+            ? officialEmp.name
+            : (rec.employeeName || parameter.employeeName || "");
+
           rows.push([
-            rec.dateStr || dateStr,
-            rec.timeStr || timeStr,
-            rec.shiftName || rec.dayNight || dayNight,
-            rec.employeeId || parameter.employeeId || "",
-            rec.employeeName || parameter.employeeName || "",
+            recDate,
+            recTime,
+            rec.shiftName || (officialEmp && officialEmp.shift) || rec.dayNight || dayNight,
+            recEmpId,
+            finalEmpName,
             rec.sortingWall || parameter.sortingWall || "",
-            String(rec.cargoPlace || parameter.cargoPlace || "").trim(),
-            String(rec.barcode || "").trim(),
+            recCargo,
+            recBarcode,
             rec.description || "",
             rec.category1 || "",
             rec.category2 || "",
             rec.compensationPrice || "",
-            rec.problem || "",
+            recProb,
             Number(rec.qty || 1)
           ]);
+
+          if (rId) processedIds.push(rId);
         }
 
         if (rows.length > 0) {
           var lastRow = logSheet.getLastRow();
           logSheet.getRange(lastRow + 1, 1, rows.length, 14).setValues(rows);
+
+          // Сохраняем в кэш все записанные ID
+          for (var p = 0; p < processedIds.length; p++) {
+            cache.put("rec_" + processedIds[p], "1", 21600);
+          }
         }
 
         response = {
           success: true,
-          message: "Пакет из " + rows.length + " записей успешно синхронизирован"
+          message: "Синхронизировано " + rows.length + " записей (дубликаты отфильтрованы)"
         };
 
       } else {
-        var newRow = [
-          dateStr,                                      // 1. Дата операции
-          timeStr,                                      // 2. Время операции
-          parameter.shiftName || dayNight,              // 3. Смена
-          parameter.employeeId || "",                   // 4. ID Сотрудника
-          parameter.employeeName || "",                 // 5. ФИО сотрудника
-          parameter.sortingWall || "",                  // 6. Стена сортировки
-          String(parameter.cargoPlace || "").trim(),    // 7. ШК Короба
-          String(parameter.barcode || "").trim(),       // 8. ШК Товара (13 цифр)
-          parameter.description || "",                  // 9. Описание
-          parameter.category1 || "",                    // 10. Категория 1
-          parameter.category2 || "",                    // 11. Категория 2
-          parameter.compensationPrice || "",            // 12. Цена компенсации
-          parameter.problem || "",                      // 13. Причина проблемы
-          Number(parameter.qty || 1)                    // 14. Количество
-        ];
+        // Одиночная запись
+        var clientRecordId = String(parameter.clientRecordId || "").trim();
 
-        var lastRow = logSheet.getLastRow();
-        logSheet.getRange(lastRow + 1, 1, 1, 14).setValues([newRow]);
+        // 1. Проверка по уникальному ID в кэше
+        if (clientRecordId && cache.get("rec_" + clientRecordId)) {
+          response = {
+            success: true,
+            duplicate: true,
+            message: "Запись уже была зафиксирована ранее (кэш)"
+          };
+        } else {
+          var opDate = parameter.dateStr || defaultDateStr;
+          var opTime = parameter.timeStr || defaultTimeStr;
+          var empId = String(parameter.employeeId || "").trim();
+          var cargo = String(parameter.cargoPlace || "").trim();
+          var barcode = String(parameter.barcode || "").trim();
+          var problem = parameter.problem || "";
 
-        response = {
-          success: true,
-          message: "Фиксация успешно добавлена"
-        };
+          // 2. Проверка недавнего дубликата в последних строках таблицы
+          if (isRecentDuplicate(logSheet, opDate, empId, cargo, barcode, problem, opTime)) {
+            if (clientRecordId) cache.put("rec_" + clientRecordId, "1", 21600);
+            response = {
+              success: true,
+              duplicate: true,
+              message: "Запись уже добавлена ранее (дедупликация)"
+            };
+          } else {
+            // 3. Гарантированное ФИО сотрудника из листа Employees
+            var officialEmp = empMap[empId];
+            var finalEmpName = (officialEmp && officialEmp.name)
+              ? officialEmp.name
+              : (parameter.employeeName || "");
+
+            var newRow = [
+              opDate,
+              opTime,
+              parameter.shiftName || (officialEmp && officialEmp.shift) || dayNight,
+              empId,
+              finalEmpName,
+              parameter.sortingWall || "",
+              cargo,
+              barcode,
+              parameter.description || "",
+              parameter.category1 || "",
+              parameter.category2 || "",
+              parameter.compensationPrice || "",
+              problem,
+              Number(parameter.qty || 1)
+            ];
+
+            var lastRow = logSheet.getLastRow();
+            logSheet.getRange(lastRow + 1, 1, 1, 14).setValues([newRow]);
+
+            if (clientRecordId) {
+              cache.put("rec_" + clientRecordId, "1", 21600);
+            }
+
+            response = {
+              success: true,
+              message: "Фиксация успешно добавлена"
+            };
+          }
+        }
       }
 
     // 4. ИСТОРИЯ ЗАПИСЕЙ СОТРУДНИКА
@@ -220,6 +285,90 @@ function handleRequest(e) {
 
   return ContentService.createTextOutput(JSON.stringify(response))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ═══════════════════════════════════════════
+//  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (ДЕДУПЛИКАЦИЯ И СПРАВОЧНИКИ)
+// ═══════════════════════════════════════════
+
+// Получение словаря сотрудников из листа Employees: { [wms_id]: { id, name, shift } }
+function getEmployeeMap(ss) {
+  var map = {};
+  var empSheet = ss.getSheetByName("Employees");
+  if (!empSheet) return map;
+  var empData = empSheet.getDataRange().getValues();
+  for (var i = 1; i < empData.length; i++) {
+    var id = String(empData[i][0] || "").trim();
+    if (id) {
+      map[id] = {
+        id: id,
+        name: String(empData[i][1] || "").trim(),
+        shift: String(empData[i][2] || "Основная смена").trim()
+      };
+    }
+  }
+  return map;
+}
+
+// Преобразование времени в секунды для проверки временного интервала
+function parseTimeToSeconds(val) {
+  if (!val) return null;
+  if (val instanceof Date) {
+    return val.getHours() * 3600 + val.getMinutes() * 60 + val.getSeconds();
+  }
+  var parts = String(val).split(":");
+  if (parts.length >= 2) {
+    var h = parseInt(parts[0], 10) || 0;
+    var m = parseInt(parts[1], 10) || 0;
+    var s = parseInt(parts[2], 10) || 0;
+    return h * 3600 + m * 60 + s;
+  }
+  return null;
+}
+
+// Проверка на недавний дубликат в последних 50 строках листа Log
+function isRecentDuplicate(logSheet, dateStr, employeeId, cargoPlace, barcode, problem, timeStr) {
+  var lastRow = logSheet ? logSheet.getLastRow() : 0;
+  if (lastRow <= 1) return false;
+
+  var checkCount = Math.min(50, lastRow - 1);
+  var startRow = lastRow - checkCount + 1;
+  var recentValues = logSheet.getRange(startRow, 1, checkCount, 14).getValues();
+
+  var cleanDate = String(dateStr || "").trim();
+  var cleanEmpId = String(employeeId || "").trim();
+  var cleanCargo = String(cargoPlace || "").trim();
+  var cleanBarcode = String(barcode || "").trim();
+  var cleanProb = String(problem || "").trim();
+  var targetSec = parseTimeToSeconds(timeStr);
+
+  var tz = Session.getScriptTimeZone();
+
+  for (var i = recentValues.length - 1; i >= 0; i--) {
+    var row = recentValues[i];
+    var rDate = (row[0] instanceof Date)
+      ? Utilities.formatDate(row[0], tz, "dd.MM.yyyy")
+      : String(row[0] || "").trim();
+
+    var rEmpId = String(row[3] || "").trim();
+    var rCargo = String(row[6] || "").trim();
+    var rBarcode = String(row[7] || "").trim();
+    var rProb = String(row[12] || "").trim();
+
+    if (rDate === cleanDate && rEmpId === cleanEmpId && rCargo === cleanCargo && rBarcode === cleanBarcode && rProb === cleanProb) {
+      var rSec = parseTimeToSeconds(row[1]);
+      if (targetSec !== null && rSec !== null) {
+        var diff = Math.abs(targetSec - rSec);
+        // Дубликат, если между фиксациями менее 5 минут (300 секунд)
+        if (diff <= 300) {
+          return true;
+        }
+      } else {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 // Автоматическая проверка и настройка листов при первом вызове
