@@ -342,10 +342,10 @@
         <!-- Форма фиксации входящего потока -->
         <form id="inboundForm" novalidate>
 
-          <!-- Блок 1: Данные акта и пересчета -->
+          <!-- Блок 1: Данные пересчета и короба -->
           <div class="inbound-group-box">
             <div class="group-box-title">
-              <span>📋</span> <span data-i18n="inboundActGroupTitle">Данные акта и пересчета</span>
+              <span>📋</span> <span data-i18n="inboundRecountGroupTitle">Данные пересчета и короба</span>
             </div>
 
             <div class="inbound-fields-grid">
@@ -363,38 +363,35 @@
                 <div id="inboundRecountDateError" class="error-text"></div>
               </div>
 
-              <!-- Номер акта -->
+              <!-- Номер короба -->
               <div class="barcode-input-container">
-                <label for="inboundActNumber" data-i18n="actNumberLabel">Номер акта</label>
+                <label for="inboundBoxNumber" data-i18n="boxNumberLabel">Номер короба</label>
                 <div class="input-wrapper">
                   <input
                     type="text"
-                    id="inboundActNumber"
+                    id="inboundBoxNumber"
                     class="barcode-input-field"
-                    placeholder="Введите номер акта..."
+                    placeholder="Отсканируйте или введите номер короба..."
                     required
                     autocomplete="off"
                   >
-                  <button type="button" class="clear-btn" id="clearInboundAct" aria-label="Очистить номер акта">&times;</button>
+                  <button type="button" class="clear-btn" id="clearInboundBox" aria-label="Очистить номер короба">&times;</button>
                 </div>
-                <div id="inboundActError" class="error-text"></div>
+                <div id="inboundBoxError" class="error-text"></div>
               </div>
 
-              <!-- ОТД фиксация -->
+              <!-- ОТД фиксация (дата) -->
               <div class="barcode-input-container">
-                <label for="inboundOtdFixation" data-i18n="otdFixationLabel">ОТД фиксация</label>
+                <label for="inboundOtdDate" data-i18n="otdFixationLabel">ОТД фиксация (дата)</label>
                 <div class="input-wrapper">
                   <input
-                    type="text"
-                    id="inboundOtdFixation"
-                    class="barcode-input-field"
-                    placeholder="Введите или отсканируйте ОТД..."
+                    type="date"
+                    id="inboundOtdDate"
+                    class="barcode-input-field date-input-field"
                     required
-                    autocomplete="off"
                   >
-                  <button type="button" class="clear-btn" id="clearInboundOtd" aria-label="Очистить ОТД">&times;</button>
                 </div>
-                <div id="inboundOtdError" class="error-text"></div>
+                <div id="inboundOtdDateError" class="error-text"></div>
               </div>
             </div>
           </div>
@@ -407,7 +404,7 @@
 
             <div class="inbound-fields-grid">
               <!-- ШК товара (13 цифр) -->
-              <div class="barcode-input-container barcode-full-width">
+              <div class="barcode-input-container">
                 <label for="inboundBarcode" id="inboundBarcodeLabel" data-i18n="itemBarcode13Label">Штрих-код товара (13 цифр)</label>
                 <div class="input-wrapper">
                   <input
@@ -426,28 +423,7 @@
                 <div id="inboundBarcodeError" class="error-text"></div>
               </div>
 
-              <!-- Количество -->
-              <div class="qty-and-action-bar inbound-qty-bar">
-                <div class="qty-label-wrap">
-                  <span class="title" data-i18n="qtyTitle">Количество</span>
-                  <span class="hint" data-i18n="qtyHint">По умолчанию: 1 шт.</span>
-                </div>
-                <div class="qty-stepper">
-                  <button type="button" id="inboundQtyMinusBtn" class="qty-btn" aria-label="Уменьшить на 1">–</button>
-                  <input
-                    type="number"
-                    id="inboundQtyInput"
-                    class="qty-input"
-                    min="1"
-                    max="999"
-                    value="1"
-                    inputmode="numeric"
-                  >
-                  <button type="button" id="inboundQtyPlusBtn" class="qty-btn" aria-label="Увеличить на 1">+</button>
-                </div>
-              </div>
-
-              <!-- Срок годности -->
+              <!-- Срок годности (только дата) -->
               <div class="barcode-input-container">
                 <label for="inboundExpiryDate" data-i18n="expiryDateLabel">Срок годности (только дата)</label>
                 <div class="input-wrapper">
@@ -542,8 +518,8 @@
           <span id="confirmInboundRecountDate" class="confirm-value">—</span>
         </div>
         <div class="confirm-row">
-          <span class="confirm-label" data-i18n="actNumberLabel">📋 Номер акта:</span>
-          <span id="confirmInboundAct" class="confirm-value">—</span>
+          <span class="confirm-label" data-i18n="boxNumberLabel">📦 Номер короба:</span>
+          <span id="confirmInboundBox" class="confirm-value">—</span>
         </div>
         <div class="confirm-row">
           <span class="confirm-label" data-i18n="otdFixationLabel">⚡ ОТД фиксация:</span>
@@ -552,10 +528,6 @@
         <div class="confirm-row">
           <span class="confirm-label" data-i18n="confirmBarcode">🏷️ ШК Товара:</span>
           <span id="confirmInboundBarcode" class="confirm-value" style="color: #ffffff; letter-spacing: 1px;">—</span>
-        </div>
-        <div class="confirm-row">
-          <span class="confirm-label" data-i18n="confirmQty">🔢 Количество:</span>
-          <span id="confirmInboundQty" class="confirm-value">1 шт.</span>
         </div>
         <div class="confirm-row">
           <span class="confirm-label" data-i18n="expiryDateLabel">⏳ Срок годности:</span>

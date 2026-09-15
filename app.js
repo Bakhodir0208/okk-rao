@@ -116,11 +116,12 @@ const I18N = {
     inboundProcessDesc: 'Акты пересчета, сроки годности и фиксация ОТД',
     changeProcess: 'Сменить процесс',
     inboundHeaderBadge: 'Входящий поток',
-    inboundActGroupTitle: 'Данные акта и пересчета',
+    inboundActGroupTitle: 'Данные пересчета и короба',
     inboundGoodsGroupTitle: 'Данные товара',
     recountDateLabel: 'Дата пересчета',
-    actNumberLabel: 'Номер акта',
-    otdFixationLabel: 'ОТД фиксация',
+    boxNumberLabel: 'Номер короба',
+    boxNumberPlaceholder: 'Отсканируйте или введите номер короба...',
+    otdFixationLabel: 'ОТД фиксация (дата)',
     itemBarcode13Label: 'Штрих-код товара (13 цифр)',
     expiryDateLabel: 'Срок годности (только дата)',
     submitInboundBtn: 'Зафиксировать позицию',
@@ -128,8 +129,8 @@ const I18N = {
     inboundHistoryEmpty: 'Здесь отобразятся зафиксированные позиции входящего потока',
     inboundConfirmTitle: 'Подтверждение входящего потока',
     enterRecountDate: 'Укажите дату пересчета',
-    enterActNumber: 'Введите номер акта',
-    enterOtdFixation: 'Укажите ОТД фиксацию',
+    enterBoxNumber: 'Введите номер короба',
+    enterOtdDate: 'Укажите дату фиксации ОТД',
     enterExpiryDate: 'Укажите срок годности'
   },
   uz: {
@@ -194,11 +195,12 @@ const I18N = {
     inboundProcessDesc: 'Қайта санаш далолатномалари, яроқлилик муддати ва ОТД',
     changeProcess: 'Жараённи алмаштириш',
     inboundHeaderBadge: 'Кирувчи оқим',
-    inboundActGroupTitle: 'Далолатнома ва қайта санаш маълумотлари',
+    inboundActGroupTitle: 'Қайта санаш ва қути маълумотлари',
     inboundGoodsGroupTitle: 'Маҳсулот маълумотлари',
     recountDateLabel: 'Қайта санаш санаси',
-    actNumberLabel: 'Далолатнома рақами',
-    otdFixationLabel: 'ОТД фиксация',
+    boxNumberLabel: 'Қути рақами',
+    boxNumberPlaceholder: 'Қути рақамини киритинг ёки сканерланг...',
+    otdFixationLabel: 'ОТД қайд санаси',
     itemBarcode13Label: 'Маҳсулот штрих-коди (13 рақам)',
     expiryDateLabel: 'Яроқлилик муддати (фақат сана)',
     submitInboundBtn: 'Маҳсулотни қайд қилиш',
@@ -206,8 +208,8 @@ const I18N = {
     inboundHistoryEmpty: 'Бу ерда қайд қилинган кирувчи оқим маҳсулотлари кўринади',
     inboundConfirmTitle: 'Кирувчи оқимни тасдиқлаш',
     enterRecountDate: 'Қайта санаш санасини танланг',
-    enterActNumber: 'Далолатнома рақамини киритинг',
-    enterOtdFixation: 'ОТД фиксацияни киритинг',
+    enterBoxNumber: 'Қути рақамини киритинг',
+    enterOtdDate: 'ОТД қайд санасини танланг',
     enterExpiryDate: 'Яроқлилик муддатини танланг'
   }
 };
@@ -440,8 +442,7 @@ function setLanguage(lang) {
   if (elements.wallBarcodeInput) elements.wallBarcodeInput.placeholder = t('wallPlaceholder');
   if (elements.cargoPlaceInput) elements.cargoPlaceInput.placeholder = t('cargoPlacePlaceholder');
   if (elements.itemBarcodeInput) elements.itemBarcodeInput.placeholder = t('itemBarcodePlaceholder');
-  if (elements.inboundActNumber) elements.inboundActNumber.placeholder = state.currentLang === 'uz' ? 'Далолатнома рақамини киритинг...' : 'Введите номер акта...';
-  if (elements.inboundOtdFixation) elements.inboundOtdFixation.placeholder = state.currentLang === 'uz' ? 'ОТД киритинг ёки сканерланг...' : 'Введите или отсканируйте ОТД...';
+  if (elements.inboundBoxNumber) elements.inboundBoxNumber.placeholder = t('boxNumberPlaceholder');
   if (elements.inboundBarcode) elements.inboundBarcode.placeholder = t('itemBarcodePlaceholder');
 
   // Динамические плашки
@@ -537,18 +538,14 @@ function cacheElements() {
     inboundForm: document.getElementById('inboundForm'),
     inboundRecountDate: document.getElementById('inboundRecountDate'),
     inboundRecountDateError: document.getElementById('inboundRecountDateError'),
-    inboundActNumber: document.getElementById('inboundActNumber'),
-    clearInboundAct: document.getElementById('clearInboundAct'),
-    inboundActError: document.getElementById('inboundActError'),
-    inboundOtdFixation: document.getElementById('inboundOtdFixation'),
-    clearInboundOtd: document.getElementById('clearInboundOtd'),
-    inboundOtdError: document.getElementById('inboundOtdError'),
+    inboundBoxNumber: document.getElementById('inboundBoxNumber'),
+    clearInboundBox: document.getElementById('clearInboundBox'),
+    inboundBoxError: document.getElementById('inboundBoxError'),
+    inboundOtdDate: document.getElementById('inboundOtdDate'),
+    inboundOtdDateError: document.getElementById('inboundOtdDateError'),
     inboundBarcode: document.getElementById('inboundBarcode'),
     clearInboundBarcode: document.getElementById('clearInboundBarcode'),
     inboundBarcodeError: document.getElementById('inboundBarcodeError'),
-    inboundQtyInput: document.getElementById('inboundQtyInput'),
-    inboundQtyMinusBtn: document.getElementById('inboundQtyMinusBtn'),
-    inboundQtyPlusBtn: document.getElementById('inboundQtyPlusBtn'),
     inboundExpiryDate: document.getElementById('inboundExpiryDate'),
     inboundExpiryDateError: document.getElementById('inboundExpiryDateError'),
     submitInboundBtn: document.getElementById('submitInboundBtn'),
@@ -574,10 +571,9 @@ function cacheElements() {
     // Inbound Confirm Modal
     inboundConfirmModal: document.getElementById('inboundConfirmModal'),
     confirmInboundRecountDate: document.getElementById('confirmInboundRecountDate'),
-    confirmInboundAct: document.getElementById('confirmInboundAct'),
+    confirmInboundBox: document.getElementById('confirmInboundBox'),
     confirmInboundOtd: document.getElementById('confirmInboundOtd'),
     confirmInboundBarcode: document.getElementById('confirmInboundBarcode'),
-    confirmInboundQty: document.getElementById('confirmInboundQty'),
     confirmInboundExpiry: document.getElementById('confirmInboundExpiry'),
     cancelInboundConfirmBtn: document.getElementById('cancelInboundConfirmBtn'),
     submitInboundConfirmBtn: document.getElementById('submitInboundConfirmBtn')
@@ -638,8 +634,8 @@ function showScreen(screenName) {
     }
     loadInboundHistory();
     setTimeout(() => {
-      if (elements.inboundActNumber && !elements.inboundActNumber.value) {
-        elements.inboundActNumber.focus();
+      if (elements.inboundBoxNumber && !elements.inboundBoxNumber.value) {
+        elements.inboundBoxNumber.focus();
       } else if (elements.inboundBarcode) {
         elements.inboundBarcode.focus();
       }
@@ -1480,20 +1476,19 @@ function renderInboundHistoryList() {
   state.inboundHistory.forEach(item => {
     const div = document.createElement('div');
     div.className = 'history-item';
-    const actLabel = state.currentLang === 'uz' ? 'Далолатнома' : 'Акт';
+    const boxLabel = state.currentLang === 'uz' ? 'Қути' : 'Короб';
     const expiryLabel = state.currentLang === 'uz' ? 'Муддати' : 'Срок';
 
     div.innerHTML = `
       <div class="history-item-left">
         <span class="history-barcode">${item.barcode}</span>
         <div style="display: flex; gap: 8px; font-size: 12px; align-items: center; flex-wrap: wrap;">
-          <span style="color: var(--text-secondary); font-family: var(--font-display); font-weight: 600;">📋 ${actLabel}: ${item.actNumber}</span>
+          <span style="color: var(--text-secondary); font-family: var(--font-display); font-weight: 600;">📦 ${boxLabel}: ${item.boxNumber || item.actNumber || '—'}</span>
           ${item.otdFixation ? `<span style="color: var(--accent-color); font-weight: 600;">⚡ ОТД: ${item.otdFixation}</span>` : ''}
           ${item.recountDate ? `<span style="color: var(--text-muted);">📅 ${item.recountDate}</span>` : ''}
         </div>
       </div>
       <div class="history-item-right">
-        <span class="history-qty">${item.qty} ${t('pcs')}</span>
         <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
           ${item.expiryDate ? `<span style="font-size: 11px; color: var(--accent-color); font-weight: 600;">⏳ ${expiryLabel}: ${item.expiryDate}</span>` : ''}
           <span class="history-time">${item.timeStr || ''}</span>
@@ -1526,8 +1521,8 @@ function parseAndFormatDisplayDate(val) {
 function clearInboundErrors() {
   const errorIds = [
     'inboundRecountDateError',
-    'inboundActError',
-    'inboundOtdError',
+    'inboundBoxError',
+    'inboundOtdDateError',
     'inboundBarcodeError',
     'inboundExpiryDateError'
   ];
@@ -1541,8 +1536,8 @@ function clearInboundErrors() {
 
   const inputs = [
     elements.inboundRecountDate,
-    elements.inboundActNumber,
-    elements.inboundOtdFixation,
+    elements.inboundBoxNumber,
+    elements.inboundOtdDate,
     elements.inboundBarcode,
     elements.inboundExpiryDate
   ];
@@ -1570,22 +1565,21 @@ function handleInboundSubmit() {
   clearInboundErrors();
 
   const recountDate = elements.inboundRecountDate ? elements.inboundRecountDate.value.trim() : '';
-  const actNumber = elements.inboundActNumber ? autoConvertLayout(elements.inboundActNumber.value).trim() : '';
-  const otdFixation = elements.inboundOtdFixation ? autoConvertLayout(elements.inboundOtdFixation.value).trim() : '';
+  const boxNumber = elements.inboundBoxNumber ? autoConvertLayout(elements.inboundBoxNumber.value).trim() : '';
+  const otdDate = elements.inboundOtdDate ? elements.inboundOtdDate.value.trim() : '';
   const barcode = elements.inboundBarcode ? autoConvertLayout(elements.inboundBarcode.value).replace(/\D/g, '').trim() : '';
-  const qty = elements.inboundQtyInput ? (parseInt(elements.inboundQtyInput.value, 10) || 1) : 1;
   const expiryDate = elements.inboundExpiryDate ? elements.inboundExpiryDate.value.trim() : '';
 
   if (!recountDate) {
     showInboundError('inboundRecountDateError', elements.inboundRecountDate, t('enterRecountDate'));
     return;
   }
-  if (!actNumber) {
-    showInboundError('inboundActError', elements.inboundActNumber, t('enterActNumber'));
+  if (!boxNumber) {
+    showInboundError('inboundBoxError', elements.inboundBoxNumber, t('enterBoxNumber'));
     return;
   }
-  if (!otdFixation) {
-    showInboundError('inboundOtdError', elements.inboundOtdFixation, t('enterOtdFixation'));
+  if (!otdDate) {
+    showInboundError('inboundOtdDateError', elements.inboundOtdDate, t('enterOtdDate'));
     return;
   }
   if (!/^\d{13}$/.test(barcode)) {
@@ -1600,10 +1594,10 @@ function handleInboundSubmit() {
   openInboundConfirmModal({
     recountDate: recountDate,
     recountDateFormatted: parseAndFormatDisplayDate(recountDate),
-    actNumber: actNumber,
-    otdFixation: otdFixation,
+    boxNumber: boxNumber,
+    otdDate: otdDate,
+    otdDateFormatted: parseAndFormatDisplayDate(otdDate),
     barcode: barcode,
-    qty: qty,
     expiryDate: expiryDate,
     expiryDateFormatted: parseAndFormatDisplayDate(expiryDate)
   });
@@ -1615,17 +1609,14 @@ function openInboundConfirmModal(record) {
   if (elements.confirmInboundRecountDate) {
     elements.confirmInboundRecountDate.textContent = record.recountDateFormatted || record.recountDate || '—';
   }
-  if (elements.confirmInboundAct) {
-    elements.confirmInboundAct.textContent = record.actNumber || '—';
+  if (elements.confirmInboundBox) {
+    elements.confirmInboundBox.textContent = record.boxNumber || '—';
   }
   if (elements.confirmInboundOtd) {
-    elements.confirmInboundOtd.textContent = record.otdFixation || '—';
+    elements.confirmInboundOtd.textContent = record.otdDateFormatted || record.otdDate || '—';
   }
   if (elements.confirmInboundBarcode) {
     elements.confirmInboundBarcode.textContent = record.barcode || '—';
-  }
-  if (elements.confirmInboundQty) {
-    elements.confirmInboundQty.textContent = `${record.qty} ${t('pcs')}`;
   }
   if (elements.confirmInboundExpiry) {
     elements.confirmInboundExpiry.textContent = record.expiryDateFormatted || record.expiryDate || '—';
@@ -1646,19 +1637,18 @@ function closeInboundConfirmModal() {
 
 function resetInboundForm() {
   if (elements.inboundRecountDate) elements.inboundRecountDate.value = formatIsoDate(new Date());
-  if (elements.inboundActNumber) elements.inboundActNumber.value = '';
-  if (elements.inboundOtdFixation) elements.inboundOtdFixation.value = '';
+  if (elements.inboundBoxNumber) elements.inboundBoxNumber.value = '';
+  if (elements.inboundOtdDate) elements.inboundOtdDate.value = '';
   if (elements.inboundBarcode) {
     elements.inboundBarcode.value = '';
     elements.inboundBarcode.classList.remove('input-valid', 'input-error');
   }
-  if (elements.inboundQtyInput) elements.inboundQtyInput.value = '1';
   if (elements.inboundExpiryDate) elements.inboundExpiryDate.value = '';
 
   clearInboundErrors();
 
-  if (elements.inboundActNumber) {
-    elements.inboundActNumber.focus();
+  if (elements.inboundBoxNumber) {
+    elements.inboundBoxNumber.focus();
   }
 }
 
@@ -1672,6 +1662,7 @@ function submitInboundRecord(record) {
   const clientRecordId = 'inb_' + now.getTime() + '_' + Math.random().toString(36).substring(2, 9);
 
   const recountFormatted = record.recountDateFormatted || parseAndFormatDisplayDate(record.recountDate);
+  const otdFormatted = record.otdDateFormatted || parseAndFormatDisplayDate(record.otdDate);
   const expiryFormatted = record.expiryDateFormatted || parseAndFormatDisplayDate(record.expiryDate);
 
   const inboundPayload = {
@@ -1681,11 +1672,10 @@ function submitInboundRecord(record) {
     employeeId: state.currentUser?.id || '',
     employeeName: state.currentUser?.name || '',
     recountDate: recountFormatted,
-    actNumber: record.actNumber,
+    boxNumber: record.boxNumber,
     barcode: record.barcode,
-    qty: record.qty,
     expiryDate: expiryFormatted,
-    otdFixation: record.otdFixation,
+    otdFixation: otdFormatted,
     category1: '',
     category2: '',
     compensationPrice: ''
@@ -1694,7 +1684,7 @@ function submitInboundRecord(record) {
   playSound('success');
   addInboundRecordToHistory(inboundPayload);
 
-  showToast(`✅ Акт № ${record.actNumber} • ШК ${record.barcode} (${record.qty} ${t('pcs')})`, 'success');
+  showToast(`✅ Короб № ${record.boxNumber} • ШК ${record.barcode}`, 'success');
 
   // Очищаем форму ("чистим все. вносим все заново.")
   resetInboundForm();
@@ -1713,9 +1703,8 @@ function submitInboundRecord(record) {
     employeeId: inboundPayload.employeeId,
     employeeName: inboundPayload.employeeName,
     recountDate: inboundPayload.recountDate,
-    actNumber: inboundPayload.actNumber,
+    boxNumber: inboundPayload.boxNumber,
     barcode: inboundPayload.barcode,
-    qty: String(inboundPayload.qty),
     expiryDate: inboundPayload.expiryDate,
     otdFixation: inboundPayload.otdFixation,
     category1: '',
@@ -1891,23 +1880,13 @@ function setupProcessSelectListeners() {
 // ═══════════════════════════════════════════
 function setupInboundListeners() {
   // Очистка полей
-  if (elements.clearInboundAct) {
-    elements.clearInboundAct.addEventListener('click', () => {
-      elements.inboundActNumber.value = '';
-      const err = document.getElementById('inboundActError');
+  if (elements.clearInboundBox) {
+    elements.clearInboundBox.addEventListener('click', () => {
+      elements.inboundBoxNumber.value = '';
+      const err = document.getElementById('inboundBoxError');
       if (err) err.classList.remove('visible');
-      elements.inboundActNumber.classList.remove('input-error');
-      elements.inboundActNumber.focus();
-    });
-  }
-
-  if (elements.clearInboundOtd) {
-    elements.clearInboundOtd.addEventListener('click', () => {
-      elements.inboundOtdFixation.value = '';
-      const err = document.getElementById('inboundOtdError');
-      if (err) err.classList.remove('visible');
-      elements.inboundOtdFixation.classList.remove('input-error');
-      elements.inboundOtdFixation.focus();
+      elements.inboundBoxNumber.classList.remove('input-error');
+      elements.inboundBoxNumber.focus();
     });
   }
 
@@ -1921,37 +1900,21 @@ function setupInboundListeners() {
     });
   }
 
-  // Управление количеством
-  if (elements.inboundQtyMinusBtn) {
-    elements.inboundQtyMinusBtn.addEventListener('click', () => {
-      let val = parseInt(elements.inboundQtyInput.value, 10) || 1;
-      if (val > 1) elements.inboundQtyInput.value = val - 1;
-    });
-  }
-
-  if (elements.inboundQtyPlusBtn) {
-    elements.inboundQtyPlusBtn.addEventListener('click', () => {
-      let val = parseInt(elements.inboundQtyInput.value, 10) || 1;
-      if (val < 999) elements.inboundQtyInput.value = val + 1;
-    });
-  }
-
   // Автоконвертация раскладки при вводе
-  if (elements.inboundActNumber) {
-    elements.inboundActNumber.addEventListener('input', () => {
-      elements.inboundActNumber.value = autoConvertLayout(elements.inboundActNumber.value);
-      const err = document.getElementById('inboundActError');
+  if (elements.inboundBoxNumber) {
+    elements.inboundBoxNumber.addEventListener('input', () => {
+      elements.inboundBoxNumber.value = autoConvertLayout(elements.inboundBoxNumber.value);
+      const err = document.getElementById('inboundBoxError');
       if (err) err.classList.remove('visible');
-      elements.inboundActNumber.classList.remove('input-error');
+      elements.inboundBoxNumber.classList.remove('input-error');
     });
   }
 
-  if (elements.inboundOtdFixation) {
-    elements.inboundOtdFixation.addEventListener('input', () => {
-      elements.inboundOtdFixation.value = autoConvertLayout(elements.inboundOtdFixation.value);
-      const err = document.getElementById('inboundOtdError');
+  if (elements.inboundOtdDate) {
+    elements.inboundOtdDate.addEventListener('change', () => {
+      const err = document.getElementById('inboundOtdDateError');
       if (err) err.classList.remove('visible');
-      elements.inboundOtdFixation.classList.remove('input-error');
+      elements.inboundOtdDate.classList.remove('input-error');
     });
   }
 
@@ -2182,15 +2145,14 @@ function setupEventListeners() {
     else if (elements.inboundScreen && elements.inboundScreen.classList.contains('active')) {
       const isInboundInput = (
         activeEl === elements.inboundRecountDate ||
-        activeEl === elements.inboundActNumber ||
-        activeEl === elements.inboundOtdFixation ||
+        activeEl === elements.inboundBoxNumber ||
+        activeEl === elements.inboundOtdDate ||
         activeEl === elements.inboundBarcode ||
-        activeEl === elements.inboundQtyInput ||
         activeEl === elements.inboundExpiryDate
       );
       if (!isInboundInput) {
-        if (!elements.inboundActNumber.value.trim()) {
-          elements.inboundActNumber.focus();
+        if (!elements.inboundBoxNumber.value.trim()) {
+          elements.inboundBoxNumber.focus();
         } else {
           elements.inboundBarcode.focus();
         }
