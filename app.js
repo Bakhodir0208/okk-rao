@@ -116,8 +116,9 @@ const I18N = {
     inboundProcessDesc: 'Акты пересчета, сроки годности и фиксация ОТД',
     changeProcess: 'Сменить процесс',
     inboundHeaderBadge: 'Входящий поток',
+    inboundRecountGroupTitle: 'Данные пересчета и короба',
     inboundActGroupTitle: 'Данные пересчета и короба',
-    inboundGoodsGroupTitle: 'Данные товара',
+    inboundGoodsGroupTitle: 'Данные товара и фиксации',
     recountDateLabel: 'Дата пересчета',
     boxNumberLabel: 'Номер короба',
     boxNumberPlaceholder: 'Отсканируйте или введите номер короба...',
@@ -195,8 +196,9 @@ const I18N = {
     inboundProcessDesc: 'Қайта санаш далолатномалари, яроқлилик муддати ва ОТД',
     changeProcess: 'Жараённи алмаштириш',
     inboundHeaderBadge: 'Кирувчи оқим',
+    inboundRecountGroupTitle: 'Қайта санаш ва қути маълумотлари',
     inboundActGroupTitle: 'Қайта санаш ва қути маълумотлари',
-    inboundGoodsGroupTitle: 'Маҳсулот маълумотлари',
+    inboundGoodsGroupTitle: 'Маҳсулот ва қайд маълумотлари',
     recountDateLabel: 'Қайта санаш санаси',
     boxNumberLabel: 'Қути рақами',
     boxNumberPlaceholder: 'Қути рақамини киритинг ёки сканерланг...',
@@ -1566,9 +1568,9 @@ function handleInboundSubmit() {
 
   const recountDate = elements.inboundRecountDate ? elements.inboundRecountDate.value.trim() : '';
   const boxNumber = elements.inboundBoxNumber ? autoConvertLayout(elements.inboundBoxNumber.value).trim() : '';
-  const otdDate = elements.inboundOtdDate ? elements.inboundOtdDate.value.trim() : '';
   const barcode = elements.inboundBarcode ? autoConvertLayout(elements.inboundBarcode.value).replace(/\D/g, '').trim() : '';
   const expiryDate = elements.inboundExpiryDate ? elements.inboundExpiryDate.value.trim() : '';
+  const otdDate = elements.inboundOtdDate ? elements.inboundOtdDate.value.trim() : '';
 
   if (!recountDate) {
     showInboundError('inboundRecountDateError', elements.inboundRecountDate, t('enterRecountDate'));
@@ -1576,10 +1578,6 @@ function handleInboundSubmit() {
   }
   if (!boxNumber) {
     showInboundError('inboundBoxError', elements.inboundBoxNumber, t('enterBoxNumber'));
-    return;
-  }
-  if (!otdDate) {
-    showInboundError('inboundOtdDateError', elements.inboundOtdDate, t('enterOtdDate'));
     return;
   }
   if (!/^\d{13}$/.test(barcode)) {
@@ -1590,16 +1588,20 @@ function handleInboundSubmit() {
     showInboundError('inboundExpiryDateError', elements.inboundExpiryDate, t('enterExpiryDate'));
     return;
   }
+  if (!otdDate) {
+    showInboundError('inboundOtdDateError', elements.inboundOtdDate, t('enterOtdDate'));
+    return;
+  }
 
   openInboundConfirmModal({
     recountDate: recountDate,
     recountDateFormatted: parseAndFormatDisplayDate(recountDate),
     boxNumber: boxNumber,
-    otdDate: otdDate,
-    otdDateFormatted: parseAndFormatDisplayDate(otdDate),
     barcode: barcode,
     expiryDate: expiryDate,
-    expiryDateFormatted: parseAndFormatDisplayDate(expiryDate)
+    expiryDateFormatted: parseAndFormatDisplayDate(expiryDate),
+    otdDate: otdDate,
+    otdDateFormatted: parseAndFormatDisplayDate(otdDate)
   });
 }
 
@@ -1612,14 +1614,14 @@ function openInboundConfirmModal(record) {
   if (elements.confirmInboundBox) {
     elements.confirmInboundBox.textContent = record.boxNumber || '—';
   }
-  if (elements.confirmInboundOtd) {
-    elements.confirmInboundOtd.textContent = record.otdDateFormatted || record.otdDate || '—';
-  }
   if (elements.confirmInboundBarcode) {
     elements.confirmInboundBarcode.textContent = record.barcode || '—';
   }
   if (elements.confirmInboundExpiry) {
     elements.confirmInboundExpiry.textContent = record.expiryDateFormatted || record.expiryDate || '—';
+  }
+  if (elements.confirmInboundOtd) {
+    elements.confirmInboundOtd.textContent = record.otdDateFormatted || record.otdDate || '—';
   }
 
   if (elements.inboundConfirmModal) {
@@ -1638,12 +1640,12 @@ function closeInboundConfirmModal() {
 function resetInboundForm() {
   if (elements.inboundRecountDate) elements.inboundRecountDate.value = formatIsoDate(new Date());
   if (elements.inboundBoxNumber) elements.inboundBoxNumber.value = '';
-  if (elements.inboundOtdDate) elements.inboundOtdDate.value = '';
   if (elements.inboundBarcode) {
     elements.inboundBarcode.value = '';
     elements.inboundBarcode.classList.remove('input-valid', 'input-error');
   }
   if (elements.inboundExpiryDate) elements.inboundExpiryDate.value = '';
+  if (elements.inboundOtdDate) elements.inboundOtdDate.value = '';
 
   clearInboundErrors();
 
@@ -1900,7 +1902,7 @@ function setupInboundListeners() {
     });
   }
 
-  // Автоконвертация раскладки при вводе
+  // Автоконвертация раскладки при вводе и переход по Enter
   if (elements.inboundBoxNumber) {
     elements.inboundBoxNumber.addEventListener('input', () => {
       elements.inboundBoxNumber.value = autoConvertLayout(elements.inboundBoxNumber.value);
@@ -1908,13 +1910,17 @@ function setupInboundListeners() {
       if (err) err.classList.remove('visible');
       elements.inboundBoxNumber.classList.remove('input-error');
     });
-  }
 
-  if (elements.inboundOtdDate) {
-    elements.inboundOtdDate.addEventListener('change', () => {
-      const err = document.getElementById('inboundOtdDateError');
-      if (err) err.classList.remove('visible');
-      elements.inboundOtdDate.classList.remove('input-error');
+    elements.inboundBoxNumber.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const val = elements.inboundBoxNumber.value.trim();
+        if (!val) {
+          showInboundError('inboundBoxError', elements.inboundBoxNumber, t('enterBoxNumber'));
+        } else {
+          elements.inboundBarcode.focus();
+        }
+      }
     });
   }
 
@@ -1945,6 +1951,8 @@ function setupInboundListeners() {
         } else {
           if (!elements.inboundExpiryDate.value) {
             elements.inboundExpiryDate.focus();
+          } else if (!elements.inboundOtdDate.value) {
+            elements.inboundOtdDate.focus();
           } else {
             handleInboundSubmit();
           }
@@ -1958,6 +1966,17 @@ function setupInboundListeners() {
       const err = document.getElementById('inboundExpiryDateError');
       if (err) err.classList.remove('visible');
       elements.inboundExpiryDate.classList.remove('input-error');
+      if (elements.inboundExpiryDate.value && !elements.inboundOtdDate.value) {
+        elements.inboundOtdDate.focus();
+      }
+    });
+  }
+
+  if (elements.inboundOtdDate) {
+    elements.inboundOtdDate.addEventListener('change', () => {
+      const err = document.getElementById('inboundOtdDateError');
+      if (err) err.classList.remove('visible');
+      elements.inboundOtdDate.classList.remove('input-error');
     });
   }
 
