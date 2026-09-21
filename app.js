@@ -153,7 +153,8 @@ const I18N = {
     selectProblemFirst: 'Пожалуйста, выберите причину проблемы!',
     confirmProblem: 'Причина фиксации:',
     enterBoxNumber: 'Введите номер короба',
-    enterExpiryDate: 'Укажите срок годности'
+    enterExpiryDate: 'Укажите срок годности',
+    noExpiryBtn: 'Без срока годности'
   },
   uz: {
     brandBadge: 'ОКК • Сифат назорати • РАО',
@@ -233,7 +234,8 @@ const I18N = {
     inboundProblemsTitle: 'Қайд қилиш сабаби',
     selectProblemFirst: 'Илтимос, аввал муаммо сабабини танланг!',
     enterBoxNumber: 'Қути рақамини киритинг',
-    enterExpiryDate: 'Яроқлилик муддатини танланг'
+    enterExpiryDate: 'Яроқлилик муддатини танланг',
+    noExpiryBtn: 'Яроқлилик муддати йўқ'
   }
 };
 
@@ -337,6 +339,7 @@ const state = {
   problemsList: [...PROBLEMS_CATALOG],
   inboundProblemsList: [...DEFAULT_INBOUND_PROBLEMS],
   selectedInboundProblem: null,
+  inboundNoExpiry: false,
   offlineQueue: [],
   history: [],
   inboundOfflineQueue: [],
@@ -496,6 +499,9 @@ function setLanguage(lang) {
   if (elements.itemBarcodeInput) elements.itemBarcodeInput.placeholder = t('itemBarcodePlaceholder');
   if (elements.inboundBoxNumber) elements.inboundBoxNumber.placeholder = t('boxNumberPlaceholder');
   if (elements.inboundBarcode) elements.inboundBarcode.placeholder = t('itemBarcodePlaceholder');
+  if (state.inboundNoExpiry && elements.inboundExpiryDate) {
+    elements.inboundExpiryDate.value = state.currentLang === 'uz' ? 'Яроқлилик муддати йўқ' : 'Без срока годности';
+  }
 
   // Динамические плашки
   if (state.currentWall && elements.activeWallBadge) {
@@ -596,6 +602,7 @@ function cacheElements() {
     inboundBarcodeError: document.getElementById('inboundBarcodeError'),
     inboundExpiryDate: document.getElementById('inboundExpiryDate'),
     clearInboundExpiry: document.getElementById('clearInboundExpiry'),
+    toggleNoExpiryBtn: document.getElementById('toggleNoExpiryBtn'),
     inboundExpiryDateError: document.getElementById('inboundExpiryDateError'),
     inboundProblemsGrid: document.getElementById('inboundProblemsGrid'),
     inboundProblemError: document.getElementById('inboundProblemError'),
@@ -1592,11 +1599,9 @@ function selectInboundProblem(prob, btnElement) {
     err.classList.remove('visible');
   }
 
-  // Если выбрана причина "Без срока годности", очищаем ошибку срока
+  // Если выбрана причина "Без срока годности", автоматически активируем режим "Без срока годности"
   if (prob.ru === 'Без срока годности') {
-    const expErr = document.getElementById('inboundExpiryDateError');
-    if (expErr) expErr.classList.remove('visible');
-    if (elements.inboundExpiryDate) elements.inboundExpiryDate.classList.remove('input-error');
+    setInboundNoExpiry(true);
   }
 
   // Если выбрана причина "Нет штрихкода или он не читается", очищаем ошибку ШК
@@ -1619,6 +1624,38 @@ function showInboundProblemError(msg) {
 // ═══════════════════════════════════════════
 //  ВХОДЯЩИЙ ПОТОК: ОБРАБОТКА, ВАЛИДАЦИЯ И ОТПРАВКА
 // ═══════════════════════════════════════════
+function setInboundNoExpiry(isActive) {
+  state.inboundNoExpiry = !!isActive;
+
+  if (elements.toggleNoExpiryBtn) {
+    if (state.inboundNoExpiry) {
+      elements.toggleNoExpiryBtn.classList.add('active');
+    } else {
+      elements.toggleNoExpiryBtn.classList.remove('active');
+    }
+  }
+
+  if (elements.inboundExpiryDate) {
+    if (state.inboundNoExpiry) {
+      elements.inboundExpiryDate.type = 'text';
+      elements.inboundExpiryDate.value = state.currentLang === 'uz' ? 'Яроқлилик муддати йўқ' : 'Без срока годности';
+      elements.inboundExpiryDate.classList.add('no-expiry-active');
+      elements.inboundExpiryDate.classList.remove('input-error');
+      const err = document.getElementById('inboundExpiryDateError');
+      if (err) {
+        err.textContent = '';
+        err.classList.remove('visible');
+      }
+      if (elements.clearInboundExpiry) elements.clearInboundExpiry.style.display = 'flex';
+    } else {
+      elements.inboundExpiryDate.type = 'date';
+      elements.inboundExpiryDate.value = '';
+      elements.inboundExpiryDate.classList.remove('no-expiry-active');
+      if (elements.clearInboundExpiry) elements.clearInboundExpiry.style.display = 'none';
+    }
+  }
+}
+
 function formatIsoDate(d) {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -1707,10 +1744,10 @@ function handleInboundSubmit() {
     }
   }
 
-  // 4. Валидация срока годности (кроме "Без срока годности")
+  // 4. Валидация срока годности (кроме "Без срока годности" или если включен state.inboundNoExpiry)
   let formattedExpiry = '';
-  if (prob.ru === 'Без срока годности') {
-    formattedExpiry = expiryDate ? parseAndFormatDisplayDate(expiryDate) : 'Без срока';
+  if (state.inboundNoExpiry || prob.ru === 'Без срока годности') {
+    formattedExpiry = (expiryDate && !state.inboundNoExpiry) ? parseAndFormatDisplayDate(expiryDate) : 'Без срока годности';
   } else {
     if (!expiryDate) {
       showInboundError('inboundExpiryDateError', elements.inboundExpiryDate, t('enterExpiryDate'));
@@ -1767,10 +1804,7 @@ function resetInboundItemForm(keepBox = true) {
     elements.inboundBarcode.value = '';
     elements.inboundBarcode.classList.remove('input-valid', 'input-error');
   }
-  if (elements.inboundExpiryDate) {
-    elements.inboundExpiryDate.value = '';
-    elements.inboundExpiryDate.classList.remove('input-error');
-  }
+  setInboundNoExpiry(false);
   state.selectedInboundProblem = null;
   document.querySelectorAll('#inboundProblemsGrid .problem-card-btn').forEach(b => b.classList.remove('selected'));
   clearInboundErrors();
@@ -2056,8 +2090,18 @@ function setupInboundListeners() {
     });
   }
 
+  if (elements.toggleNoExpiryBtn) {
+    elements.toggleNoExpiryBtn.addEventListener('click', () => {
+      setInboundNoExpiry(!state.inboundNoExpiry);
+      if (!state.inboundNoExpiry && elements.inboundExpiryDate) {
+        elements.inboundExpiryDate.focus();
+      }
+    });
+  }
+
   if (elements.clearInboundExpiry) {
     elements.clearInboundExpiry.addEventListener('click', () => {
+      setInboundNoExpiry(false);
       elements.inboundExpiryDate.value = '';
       const err = document.getElementById('inboundExpiryDateError');
       if (err) err.classList.remove('visible');
@@ -2120,11 +2164,22 @@ function setupInboundListeners() {
   }
 
   if (elements.inboundExpiryDate) {
-    elements.inboundExpiryDate.addEventListener('change', () => {
+    const handleDateInput = () => {
+      if (state.inboundNoExpiry) {
+        state.inboundNoExpiry = false;
+        if (elements.toggleNoExpiryBtn) elements.toggleNoExpiryBtn.classList.remove('active');
+        elements.inboundExpiryDate.classList.remove('no-expiry-active');
+      }
       const err = document.getElementById('inboundExpiryDateError');
       if (err) err.classList.remove('visible');
       elements.inboundExpiryDate.classList.remove('input-error');
-    });
+      if (elements.clearInboundExpiry) {
+        elements.clearInboundExpiry.style.display = elements.inboundExpiryDate.value ? 'flex' : 'none';
+      }
+    };
+
+    elements.inboundExpiryDate.addEventListener('input', handleDateInput);
+    elements.inboundExpiryDate.addEventListener('change', handleDateInput);
 
     elements.inboundExpiryDate.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {

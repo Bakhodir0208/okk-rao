@@ -1417,3 +1417,47 @@ body {
   box-shadow: 0 8px 24px rgba(0, 230, 118, 0.45);
   transform: translateY(-2px);
 }
+
+/* Кнопка "Без срока годности" рядом со сроком */
+.no-expiry-badge-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 13px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.no-expiry-badge-btn:hover {
+  background: rgba(0, 230, 118, 0.12);
+  border-color: rgba(0, 230, 118, 0.5);
+  color: #00e676;
+  transform: translateY(-1px);
+}
+
+.no-expiry-badge-btn:active {
+  transform: scale(0.96);
+}
+
+.no-expiry-badge-btn.active {
+  background: linear-gradient(135deg, rgba(0, 230, 118, 0.28) 0%, rgba(0, 176, 255, 0.2) 100%);
+  border-color: #00e676;
+  color: #00e676;
+  box-shadow: 0 0 14px rgba(0, 230, 118, 0.35);
+}
+
+.barcode-input-field.no-expiry-active {
+  border-color: #00e676 !important;
+  color: #00e676 !important;
+  background: rgba(0, 230, 118, 0.08) !important;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
