@@ -1379,6 +1379,28 @@ body {
   padding: 10px 14px;
 }
 
+.inbound-problems-section {
+  margin-top: 18px;
+  margin-bottom: 20px;
+}
+
+.inbound-problems-grid .problem-card-btn:hover {
+  border-color: rgba(0, 230, 118, 0.5);
+  background: rgba(14, 30, 28, 0.9);
+  box-shadow: 0 6px 16px rgba(0, 230, 118, 0.15);
+}
+
+.inbound-problems-grid .problem-card-btn.selected {
+  background: linear-gradient(135deg, rgba(0, 230, 118, 0.28) 0%, rgba(0, 176, 255, 0.22) 100%);
+  border-color: #00e676;
+  box-shadow: 0 0 16px rgba(0, 230, 118, 0.35);
+}
+
+.inbound-problems-grid .problem-card-btn.selected .problem-title {
+  color: #ffffff;
+  font-weight: 700;
+}
+
 .submit-inbound-btn {
   padding: 16px;
   font-size: 16px;
@@ -1387,6 +1409,7 @@ body {
   background: linear-gradient(135deg, #00e676, #00b0ff);
   color: #0a0616;
   box-shadow: 0 6px 20px rgba(0, 230, 118, 0.3);
+  margin-top: 10px;
 }
 
 .submit-inbound-btn:hover {

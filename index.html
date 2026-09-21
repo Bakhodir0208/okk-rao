@@ -342,104 +342,79 @@
         <!-- Форма фиксации входящего потока -->
         <form id="inboundForm" novalidate>
 
-          <!-- Блок 1: Данные пересчета и короба -->
-          <div class="inbound-group-box">
-            <div class="group-box-title">
-              <span>📋</span> <span data-i18n="inboundRecountGroupTitle">Данные пересчета и короба</span>
+          <!-- Поле: Номер короба -->
+          <div class="barcode-input-container">
+            <div class="barcode-header">
+              <label for="inboundBoxNumber" data-i18n="boxNumberLabel">Номер короба</label>
             </div>
-
-            <div class="inbound-fields-grid">
-              <!-- 1. Дата пересчета -->
-              <div class="barcode-input-container">
-                <label for="inboundRecountDate" data-i18n="recountDateLabel">Дата пересчета</label>
-                <div class="input-wrapper">
-                  <input
-                    type="date"
-                    id="inboundRecountDate"
-                    class="barcode-input-field date-input-field"
-                    required
-                  >
-                </div>
-                <div id="inboundRecountDateError" class="error-text"></div>
-              </div>
-
-              <!-- 2. Номер короба -->
-              <div class="barcode-input-container">
-                <label for="inboundBoxNumber" data-i18n="boxNumberLabel">Номер короба</label>
-                <div class="input-wrapper">
-                  <input
-                    type="text"
-                    id="inboundBoxNumber"
-                    class="barcode-input-field"
-                    placeholder="Отсканируйте или введите номер короба..."
-                    required
-                    autocomplete="off"
-                  >
-                  <button type="button" class="clear-btn" id="clearInboundBox" aria-label="Очистить номер короба">&times;</button>
-                </div>
-                <div id="inboundBoxError" class="error-text"></div>
-              </div>
+            <div class="input-wrapper">
+              <input
+                type="text"
+                id="inboundBoxNumber"
+                class="barcode-input-field"
+                placeholder="Отсканируйте или введите номер короба..."
+                required
+                autocomplete="off"
+              >
+              <button type="button" class="clear-btn" id="clearInboundBox" aria-label="Очистить номер короба">&times;</button>
             </div>
+            <div id="inboundBoxError" class="error-text"></div>
           </div>
 
-          <!-- Блок 2: Данные товара и фиксации -->
-          <div class="inbound-group-box">
-            <div class="group-box-title">
-              <span>🏷️</span> <span data-i18n="inboundGoodsGroupTitle">Данные товара и фиксации</span>
+          <!-- Поле: ШК товара (13 цифр) -->
+          <div class="barcode-input-container">
+            <div class="barcode-header">
+              <label for="inboundBarcode" id="inboundBarcodeLabel" data-i18n="itemBarcode13Label">Штрих-код товара (13 цифр)</label>
             </div>
-
-            <div class="inbound-fields-grid">
-              <!-- 3. ШК товара (13 цифр) -->
-              <div class="barcode-input-container barcode-full-width">
-                <label for="inboundBarcode" id="inboundBarcodeLabel" data-i18n="itemBarcode13Label">Штрих-код товара (13 цифр)</label>
-                <div class="input-wrapper">
-                  <input
-                    type="text"
-                    id="inboundBarcode"
-                    class="barcode-input-field"
-                    inputmode="numeric"
-                    pattern="[0-9]*"
-                    placeholder="Отсканируйте ШК товара..."
-                    required
-                    autocomplete="off"
-                    maxlength="13"
-                  >
-                  <button type="button" class="clear-btn" id="clearInboundBarcode" aria-label="Очистить ШК">&times;</button>
-                </div>
-                <div id="inboundBarcodeError" class="error-text"></div>
-              </div>
-
-              <!-- 4. Срок годности (только дата) -->
-              <div class="barcode-input-container">
-                <label for="inboundExpiryDate" data-i18n="expiryDateLabel">Срок годности (только дата)</label>
-                <div class="input-wrapper">
-                  <input
-                    type="date"
-                    id="inboundExpiryDate"
-                    class="barcode-input-field date-input-field"
-                    required
-                  >
-                </div>
-                <div id="inboundExpiryDateError" class="error-text"></div>
-              </div>
-
-              <!-- 5. ОТД фиксация (дата) -->
-              <div class="barcode-input-container">
-                <label for="inboundOtdDate" data-i18n="otdFixationLabel">ОТД фиксация (дата)</label>
-                <div class="input-wrapper">
-                  <input
-                    type="date"
-                    id="inboundOtdDate"
-                    class="barcode-input-field date-input-field"
-                    required
-                  >
-                </div>
-                <div id="inboundOtdDateError" class="error-text"></div>
-              </div>
+            <div class="input-wrapper">
+              <input
+                type="text"
+                id="inboundBarcode"
+                class="barcode-input-field"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                placeholder="Отсканируйте ШК товара..."
+                required
+                autocomplete="off"
+                maxlength="13"
+              >
+              <button type="button" class="clear-btn" id="clearInboundBarcode" aria-label="Очистить ШК">&times;</button>
             </div>
+            <div id="inboundBarcodeError" class="error-text"></div>
           </div>
 
-          <!-- Кнопка фиксации -->
+          <!-- Поле: Срок годности -->
+          <div class="barcode-input-container">
+            <div class="barcode-header">
+              <label for="inboundExpiryDate" data-i18n="expiryDateLabel">Срок годности (только дата)</label>
+            </div>
+            <div class="input-wrapper">
+              <input
+                type="date"
+                id="inboundExpiryDate"
+                class="barcode-input-field date-input-field"
+                required
+              >
+              <button type="button" class="clear-btn" id="clearInboundExpiry" aria-label="Очистить срок годности">&times;</button>
+            </div>
+            <div id="inboundExpiryDateError" class="error-text"></div>
+          </div>
+
+          <!-- Сетка выбора причины фиксации (15 кнопок) -->
+          <div class="problems-section inbound-problems-section">
+            <div class="problems-section-header">
+              <h3 id="inboundProblemsSectionTitle" data-i18n="inboundProblemsTitle">Причина фиксации</h3>
+              <span class="tip" id="inboundProblemsSectionTip" data-i18n="problemsTip">Выберите причину ⚡</span>
+            </div>
+
+            <div id="inboundProblemsGrid" class="problems-grid inbound-problems-grid">
+              <!-- Карточки 15 причин будут сгенерированы скриптом -->
+              <div class="history-empty" id="inboundProblemsLoadingText" style="grid-column: 1 / -1;">Загрузка причин проблем...</div>
+            </div>
+            <div id="inboundProblemError" class="error-text" style="margin-top: -10px; margin-bottom: 14px;"></div>
+          </div>
+
+          <!-- Кнопка фиксации внизу -->
           <button type="submit" id="submitInboundBtn" class="btn btn-primary btn-block submit-inbound-btn">
             <span data-i18n="submitInboundBtn">Зафиксировать позицию</span>
             <span>➜</span>
@@ -513,10 +488,6 @@
 
       <div class="confirm-summary">
         <div class="confirm-row">
-          <span class="confirm-label" data-i18n="recountDateLabel">📅 Дата пересчета:</span>
-          <span id="confirmInboundRecountDate" class="confirm-value">—</span>
-        </div>
-        <div class="confirm-row">
           <span class="confirm-label" data-i18n="boxNumberLabel">📦 Номер короба:</span>
           <span id="confirmInboundBox" class="confirm-value">—</span>
         </div>
@@ -529,8 +500,8 @@
           <span id="confirmInboundExpiry" class="confirm-value" style="color: var(--accent-color);">—</span>
         </div>
         <div class="confirm-row">
-          <span class="confirm-label" data-i18n="otdFixationLabel">⚡ ОТД фиксация:</span>
-          <span id="confirmInboundOtd" class="confirm-value">—</span>
+          <span class="confirm-label" data-i18n="inboundProblemsTitle">⚠️ Причина фиксации:</span>
+          <span id="confirmInboundProblem" class="confirm-value" style="color: #00e676; font-weight: 700;">—</span>
         </div>
       </div>
 

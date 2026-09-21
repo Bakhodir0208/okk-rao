@@ -20,9 +20,7 @@ const STORAGE_KEYS = {
   INBOUND_OFFLINE_QUEUE: 'okk_rao_inbound_offline_queue'
 };
 
-// Каталог из 15 причин проблем:
-// ru — каноническое название ДЛЯ GOOGLE ТАБЛИЦЫ (жестко на русском языке!)
-// uz — грамотный перевод на узбекский язык для интерфейса
+// Каталог причин проблем для Отгрузки (Log)
 const PROBLEMS_CATALOG = [
   { ru: 'Протечка жидкости', uz: 'Суюқлик оқиши', icon: '💧' },
   { ru: 'Порвана мягкая упаковка (пакет)', uz: 'Юмшоқ қадоқ йиртилган (пакет)', icon: '🛍️' },
@@ -48,8 +46,30 @@ const PROBLEMS_CATALOG = [
   { ru: 'Грязная упаковка', uz: 'Ифлосланган қадоқ', icon: '🧼' }
 ];
 
+// Каталог из 15 причин проблем для Входящего потока
+const DEFAULT_INBOUND_PROBLEMS = [
+  { ru: 'Без упаковки', uz: 'Қадоқсиз', icon: '📦' },
+  { ru: 'Порвана упаковка (коробка)', uz: 'Қути қадоғи йиртилган', icon: '📦' },
+  { ru: 'Порвана мягкая упаковка (пакет)', uz: 'Юмшоқ қадоқ йиртилган (пакет)', icon: '🛍️' },
+  { ru: 'Упакован с нарушением оферты', uz: 'Оферта қоидаси бузилган', icon: '📜' },
+  { ru: 'Без маркировки', uz: 'Маркировкасиз', icon: '🏷️' },
+  { ru: 'Без описания товара', uz: 'Маҳсулот тавсифи йўқ', icon: '📝' },
+  { ru: 'Неверное количество', uz: 'Нотўғри миқдор', icon: '🔢' },
+  { ru: 'Срок годности указан неверно', uz: 'Яроқлилик муддати нотўғри кўрсатилган', icon: '📅' },
+  { ru: 'Без срока годности', uz: 'Яроқлилик муддати йўқ', icon: '⏳' },
+  { ru: 'Товар сломан, деформирован', uz: 'Маҳсулот синган, деформацияланган', icon: '🔨' },
+  { ru: 'Нет товарного вида', uz: 'Товарлик кўриниши йўқ', icon: '✨' },
+  { ru: 'Запрещённый товар', uz: 'Тақиқланган маҳсулот', icon: '⛔' },
+  { ru: 'Протечка жидкости', uz: 'Суюқлик оқиши', icon: '💧' },
+  { ru: 'Нет штрихкода или он не читается', uz: 'Штрих-код йўқ ёки ўқилмайди', icon: '🔍' },
+  { ru: 'Неверный товар (цвет, размер)', uz: 'Нотўғри маҳсулот (ранг, ўлчам)', icon: '🔄' }
+];
+
 const RU_TO_UZ_PROBLEMS_MAP = {};
 PROBLEMS_CATALOG.forEach(p => {
+  RU_TO_UZ_PROBLEMS_MAP[p.ru.toLowerCase().trim()] = p.uz;
+});
+DEFAULT_INBOUND_PROBLEMS.forEach(p => {
   RU_TO_UZ_PROBLEMS_MAP[p.ru.toLowerCase().trim()] = p.uz;
 });
 
@@ -129,9 +149,10 @@ const I18N = {
     inboundHistoryHeading: 'Последние фиксации входящего потока',
     inboundHistoryEmpty: 'Здесь отобразятся зафиксированные позиции входящего потока',
     inboundConfirmTitle: 'Подтверждение входящего потока',
-    enterRecountDate: 'Укажите дату пересчета',
+    inboundProblemsTitle: 'Причина фиксации',
+    selectProblemFirst: 'Пожалуйста, выберите причину проблемы!',
+    confirmProblem: 'Причина фиксации:',
     enterBoxNumber: 'Введите номер короба',
-    enterOtdDate: 'Укажите дату фиксации ОТД',
     enterExpiryDate: 'Укажите срок годности'
   },
   uz: {
@@ -193,7 +214,7 @@ const I18N = {
     shippingProcessDesc: 'Саралаш девори, брак ва нуқсонли маҳсулотларни қайд қилиш',
     inboundProcessBadge: 'Янги жараён',
     inboundProcessTitle: '2. Кирувчи оқим (Входящий поток)',
-    inboundProcessDesc: 'Қайта санаш далолатномалари, яроқлилик муддати ва ОТД',
+    inboundProcessDesc: 'Қайта санаш далолатномалари, яроқлилик муддати ва нуқсонлар',
     changeProcess: 'Жараённи алмаштириш',
     inboundHeaderBadge: 'Кирувчи оқим',
     inboundRecountGroupTitle: 'Қайта санаш ва қути маълумотлари',
@@ -209,9 +230,9 @@ const I18N = {
     inboundHistoryHeading: 'Кирувчи оқимнинг сўнгги қайдлари',
     inboundHistoryEmpty: 'Бу ерда қайд қилинган кирувчи оқим маҳсулотлари кўринади',
     inboundConfirmTitle: 'Кирувчи оқимни тасдиқлаш',
-    enterRecountDate: 'Қайта санаш санасини танланг',
+    inboundProblemsTitle: 'Қайд қилиш сабаби',
+    selectProblemFirst: 'Илтимос, аввал муаммо сабабини танланг!',
     enterBoxNumber: 'Қути рақамини киритинг',
-    enterOtdDate: 'ОТД қайд санасини танланг',
     enterExpiryDate: 'Яроқлилик муддатини танланг'
   }
 };
@@ -229,10 +250,19 @@ function t(key, params = {}) {
 const PROBLEM_ICON_MAP = {
   'жидкост': '💧',
   'пакет': '🛍️',
-  'товарного': '📦',
+  'товарного': '✨',
   'деформ': '🔨',
   'сломан': '🔨',
   'коробк': '📦',
+  'оферт': '📜',
+  'маркировк': '🏷️',
+  'описани': '📝',
+  'количеств': '🔢',
+  'запрещ': '⛔',
+  'штрихкод': '🔍',
+  'читает': '🔍',
+  'неверный': '🔄',
+  'без упаковки': '📦',
   'скол': '💥',
   'вмятин': '💥',
   'трещин': '💥',
@@ -251,6 +281,15 @@ const PROBLEM_ICON_MAP = {
   'влаг': '💧'
 };
 
+function getProblemIcon(reasonText) {
+  if (!reasonText) return '⚠️';
+  const lower = reasonText.toLowerCase();
+  for (const [key, ic] of Object.entries(PROBLEM_ICON_MAP)) {
+    if (lower.includes(key)) return ic;
+  }
+  return '⚠️';
+}
+
 function getClientTranslation(ruName) {
   if (!ruName) return '';
   const cleanRu = ruName.trim();
@@ -268,6 +307,15 @@ function getClientTranslation(ruName) {
   if (lower.includes('хрупк')) return 'Синган, мўрт маҳсулот';
   if (lower.includes('деформ')) return 'Маҳсулот синган, деформацияланган';
   if (lower.includes('мягкая упаковка')) return 'Юмшоқ қадоқ йиртилган (пакет)';
+  if (lower.includes('оферт')) return 'Оферта қоидаси бузилган';
+  if (lower.includes('маркировк')) return 'Маркировкасиз';
+  if (lower.includes('описани')) return 'Маҳсулот тавсифи йўқ';
+  if (lower.includes('количеств')) return 'Нотўғри миқдор';
+  if (lower.includes('запрещ')) return 'Тақиқланган маҳсулот';
+  if (lower.includes('штрихкод') || lower.includes('читает')) return 'Штрих-код йўқ ёки ўқилмайди';
+  if (lower.includes('неверный')) return 'Нотўғри маҳсулот (ранг, ўлчам)';
+  if (lower.includes('без упаковки')) return 'Қадоқсиз';
+  if (lower.includes('без срока')) return 'Яроқлилик муддати йўқ';
 
   return cleanRu;
 }
@@ -287,6 +335,8 @@ const state = {
   currentProcess: localStorage.getItem(STORAGE_KEYS.CURRENT_PROCESS) || null,
   soundEnabled: localStorage.getItem(STORAGE_KEYS.SOUND_ENABLED) !== 'false',
   problemsList: [...PROBLEMS_CATALOG],
+  inboundProblemsList: [...DEFAULT_INBOUND_PROBLEMS],
+  selectedInboundProblem: null,
   offlineQueue: [],
   history: [],
   inboundOfflineQueue: [],
@@ -538,18 +588,17 @@ function cacheElements() {
     inboundUserName: document.getElementById('inboundUserName'),
     inboundUserShift: document.getElementById('inboundUserShift'),
     inboundForm: document.getElementById('inboundForm'),
-    inboundRecountDate: document.getElementById('inboundRecountDate'),
-    inboundRecountDateError: document.getElementById('inboundRecountDateError'),
     inboundBoxNumber: document.getElementById('inboundBoxNumber'),
     clearInboundBox: document.getElementById('clearInboundBox'),
     inboundBoxError: document.getElementById('inboundBoxError'),
-    inboundOtdDate: document.getElementById('inboundOtdDate'),
-    inboundOtdDateError: document.getElementById('inboundOtdDateError'),
     inboundBarcode: document.getElementById('inboundBarcode'),
     clearInboundBarcode: document.getElementById('clearInboundBarcode'),
     inboundBarcodeError: document.getElementById('inboundBarcodeError'),
     inboundExpiryDate: document.getElementById('inboundExpiryDate'),
+    clearInboundExpiry: document.getElementById('clearInboundExpiry'),
     inboundExpiryDateError: document.getElementById('inboundExpiryDateError'),
+    inboundProblemsGrid: document.getElementById('inboundProblemsGrid'),
+    inboundProblemError: document.getElementById('inboundProblemError'),
     submitInboundBtn: document.getElementById('submitInboundBtn'),
     inboundHistoryList: document.getElementById('inboundHistoryList'),
     inboundHistoryCount: document.getElementById('inboundHistoryCount'),
@@ -572,11 +621,10 @@ function cacheElements() {
 
     // Inbound Confirm Modal
     inboundConfirmModal: document.getElementById('inboundConfirmModal'),
-    confirmInboundRecountDate: document.getElementById('confirmInboundRecountDate'),
     confirmInboundBox: document.getElementById('confirmInboundBox'),
-    confirmInboundOtd: document.getElementById('confirmInboundOtd'),
     confirmInboundBarcode: document.getElementById('confirmInboundBarcode'),
     confirmInboundExpiry: document.getElementById('confirmInboundExpiry'),
+    confirmInboundProblem: document.getElementById('confirmInboundProblem'),
     cancelInboundConfirmBtn: document.getElementById('cancelInboundConfirmBtn'),
     submitInboundConfirmBtn: document.getElementById('submitInboundConfirmBtn')
   };
@@ -631,9 +679,7 @@ function showScreen(screenName) {
     if (elements.inboundUserShift) {
       elements.inboundUserShift.textContent = getLocalizedShiftName(state.currentUser?.shift);
     }
-    if (elements.inboundRecountDate && !elements.inboundRecountDate.value) {
-      elements.inboundRecountDate.value = formatIsoDate(new Date());
-    }
+    renderInboundProblemsGrid();
     loadInboundHistory();
     setTimeout(() => {
       if (elements.inboundBoxNumber && !elements.inboundBoxNumber.value) {
@@ -1480,14 +1526,16 @@ function renderInboundHistoryList() {
     div.className = 'history-item';
     const boxLabel = state.currentLang === 'uz' ? 'Қути' : 'Короб';
     const expiryLabel = state.currentLang === 'uz' ? 'Муддати' : 'Срок';
+    const reasonDisplay = (state.currentLang === 'uz')
+      ? (RU_TO_UZ_PROBLEMS_MAP[(item.problem || '').toLowerCase().trim()] || getClientTranslation(item.problem) || item.problemDisplay || item.problem)
+      : (item.problem || item.problemDisplay);
 
     div.innerHTML = `
       <div class="history-item-left">
         <span class="history-barcode">${item.barcode}</span>
         <div style="display: flex; gap: 8px; font-size: 12px; align-items: center; flex-wrap: wrap;">
-          <span style="color: var(--text-secondary); font-family: var(--font-display); font-weight: 600;">📦 ${boxLabel}: ${item.boxNumber || item.actNumber || '—'}</span>
-          ${item.otdFixation ? `<span style="color: var(--accent-color); font-weight: 600;">⚡ ОТД: ${item.otdFixation}</span>` : ''}
-          ${item.recountDate ? `<span style="color: var(--text-muted);">📅 ${item.recountDate}</span>` : ''}
+          <span style="color: var(--text-secondary); font-family: var(--font-display); font-weight: 600;">📦 ${boxLabel}: ${item.boxNumber || '—'}</span>
+          <span class="history-reason" style="color: #00e676; font-weight: 600;">⚠️ ${reasonDisplay || ''}</span>
         </div>
       </div>
       <div class="history-item-right">
@@ -1499,6 +1547,73 @@ function renderInboundHistoryList() {
     `;
     elements.inboundHistoryList.appendChild(div);
   });
+}
+
+// ═══════════════════════════════════════════
+//  ВХОДЯЩИЙ ПОТОК: ОТРИСОВКА И ВЫБОР ПРИЧИН
+// ═══════════════════════════════════════════
+function renderInboundProblemsGrid() {
+  if (!elements.inboundProblemsGrid) return;
+  elements.inboundProblemsGrid.innerHTML = '';
+
+  state.inboundProblemsList.forEach((prob) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'problem-card-btn';
+    btn.setAttribute('data-problem-ru', prob.ru);
+
+    if (state.selectedInboundProblem && state.selectedInboundProblem.ru === prob.ru) {
+      btn.classList.add('selected');
+    }
+
+    const displayName = (state.currentLang === 'uz' && prob.uz) ? prob.uz : prob.ru;
+
+    btn.innerHTML = `
+      <span class="problem-icon">${prob.icon || getProblemIcon(prob.ru)}</span>
+      <span class="problem-title">${displayName}</span>
+    `;
+
+    btn.addEventListener('click', () => {
+      selectInboundProblem(prob, btn);
+    });
+
+    elements.inboundProblemsGrid.appendChild(btn);
+  });
+}
+
+function selectInboundProblem(prob, btnElement) {
+  state.selectedInboundProblem = prob;
+  document.querySelectorAll('#inboundProblemsGrid .problem-card-btn').forEach(b => b.classList.remove('selected'));
+  if (btnElement) btnElement.classList.add('selected');
+
+  const err = document.getElementById('inboundProblemError');
+  if (err) {
+    err.textContent = '';
+    err.classList.remove('visible');
+  }
+
+  // Если выбрана причина "Без срока годности", очищаем ошибку срока
+  if (prob.ru === 'Без срока годности') {
+    const expErr = document.getElementById('inboundExpiryDateError');
+    if (expErr) expErr.classList.remove('visible');
+    if (elements.inboundExpiryDate) elements.inboundExpiryDate.classList.remove('input-error');
+  }
+
+  // Если выбрана причина "Нет штрихкода или он не читается", очищаем ошибку ШК
+  if (prob.ru === 'Нет штрихкода или он не читается') {
+    const barErr = document.getElementById('inboundBarcodeError');
+    if (barErr) barErr.classList.remove('visible');
+    if (elements.inboundBarcode) elements.inboundBarcode.classList.remove('input-error');
+  }
+}
+
+function showInboundProblemError(msg) {
+  const errEl = document.getElementById('inboundProblemError');
+  if (errEl) {
+    errEl.textContent = msg;
+    errEl.classList.add('visible');
+  }
+  playSound('error');
 }
 
 // ═══════════════════════════════════════════
@@ -1522,11 +1637,10 @@ function parseAndFormatDisplayDate(val) {
 
 function clearInboundErrors() {
   const errorIds = [
-    'inboundRecountDateError',
     'inboundBoxError',
-    'inboundOtdDateError',
     'inboundBarcodeError',
-    'inboundExpiryDateError'
+    'inboundExpiryDateError',
+    'inboundProblemError'
   ];
   errorIds.forEach(id => {
     const el = document.getElementById(id);
@@ -1537,9 +1651,7 @@ function clearInboundErrors() {
   });
 
   const inputs = [
-    elements.inboundRecountDate,
     elements.inboundBoxNumber,
-    elements.inboundOtdDate,
     elements.inboundBarcode,
     elements.inboundExpiryDate
   ];
@@ -1566,51 +1678,61 @@ function showInboundError(errId, inputEl, msg) {
 function handleInboundSubmit() {
   clearInboundErrors();
 
-  const recountDate = elements.inboundRecountDate ? elements.inboundRecountDate.value.trim() : '';
   const boxNumber = elements.inboundBoxNumber ? autoConvertLayout(elements.inboundBoxNumber.value).trim() : '';
-  const barcode = elements.inboundBarcode ? autoConvertLayout(elements.inboundBarcode.value).replace(/\D/g, '').trim() : '';
+  let barcode = elements.inboundBarcode ? autoConvertLayout(elements.inboundBarcode.value).replace(/\D/g, '').trim() : '';
   const expiryDate = elements.inboundExpiryDate ? elements.inboundExpiryDate.value.trim() : '';
-  const otdDate = elements.inboundOtdDate ? elements.inboundOtdDate.value.trim() : '';
+  const prob = state.selectedInboundProblem;
 
-  if (!recountDate) {
-    showInboundError('inboundRecountDateError', elements.inboundRecountDate, t('enterRecountDate'));
-    return;
-  }
+  // 1. Валидация номера короба
   if (!boxNumber) {
     showInboundError('inboundBoxError', elements.inboundBoxNumber, t('enterBoxNumber'));
     return;
   }
-  if (!/^\d{13}$/.test(barcode)) {
-    showInboundError('inboundBarcodeError', elements.inboundBarcode, t('barcode13Err'));
-    return;
-  }
-  if (!expiryDate) {
-    showInboundError('inboundExpiryDateError', elements.inboundExpiryDate, t('enterExpiryDate'));
-    return;
-  }
-  if (!otdDate) {
-    showInboundError('inboundOtdDateError', elements.inboundOtdDate, t('enterOtdDate'));
+
+  // 2. Валидация причины проблемы
+  if (!prob) {
+    showInboundProblemError(t('selectProblemFirst'));
     return;
   }
 
+  // 3. Валидация ШК (строго 13 цифр, кроме "Нет штрихкода или он не читается")
+  if (prob.ru === 'Нет штрихкода или он не читается') {
+    if (!barcode) {
+      barcode = 'НЕТ ШК';
+    }
+  } else {
+    if (!/^\d{13}$/.test(barcode)) {
+      showInboundError('inboundBarcodeError', elements.inboundBarcode, t('barcode13Err'));
+      return;
+    }
+  }
+
+  // 4. Валидация срока годности (кроме "Без срока годности")
+  let formattedExpiry = '';
+  if (prob.ru === 'Без срока годности') {
+    formattedExpiry = expiryDate ? parseAndFormatDisplayDate(expiryDate) : 'Без срока';
+  } else {
+    if (!expiryDate) {
+      showInboundError('inboundExpiryDateError', elements.inboundExpiryDate, t('enterExpiryDate'));
+      return;
+    }
+    formattedExpiry = parseAndFormatDisplayDate(expiryDate);
+  }
+
+  const displayName = (state.currentLang === 'uz' && prob.uz) ? prob.uz : prob.ru;
+
   openInboundConfirmModal({
-    recountDate: recountDate,
-    recountDateFormatted: parseAndFormatDisplayDate(recountDate),
     boxNumber: boxNumber,
     barcode: barcode,
-    expiryDate: expiryDate,
-    expiryDateFormatted: parseAndFormatDisplayDate(expiryDate),
-    otdDate: otdDate,
-    otdDateFormatted: parseAndFormatDisplayDate(otdDate)
+    expiryDate: formattedExpiry,
+    problemRu: prob.ru,
+    problemDisplay: displayName
   });
 }
 
 function openInboundConfirmModal(record) {
   state.pendingInboundRecord = record;
 
-  if (elements.confirmInboundRecountDate) {
-    elements.confirmInboundRecountDate.textContent = record.recountDateFormatted || record.recountDate || '—';
-  }
   if (elements.confirmInboundBox) {
     elements.confirmInboundBox.textContent = record.boxNumber || '—';
   }
@@ -1618,10 +1740,10 @@ function openInboundConfirmModal(record) {
     elements.confirmInboundBarcode.textContent = record.barcode || '—';
   }
   if (elements.confirmInboundExpiry) {
-    elements.confirmInboundExpiry.textContent = record.expiryDateFormatted || record.expiryDate || '—';
+    elements.confirmInboundExpiry.textContent = record.expiryDate || '—';
   }
-  if (elements.confirmInboundOtd) {
-    elements.confirmInboundOtd.textContent = record.otdDateFormatted || record.otdDate || '—';
+  if (elements.confirmInboundProblem) {
+    elements.confirmInboundProblem.textContent = record.problemDisplay || record.problemRu || '—';
   }
 
   if (elements.inboundConfirmModal) {
@@ -1637,20 +1759,24 @@ function closeInboundConfirmModal() {
   }
 }
 
-function resetInboundForm() {
-  if (elements.inboundRecountDate) elements.inboundRecountDate.value = formatIsoDate(new Date());
-  if (elements.inboundBoxNumber) elements.inboundBoxNumber.value = '';
+function resetInboundItemForm(keepBox = true) {
+  if (!keepBox && elements.inboundBoxNumber) {
+    elements.inboundBoxNumber.value = '';
+  }
   if (elements.inboundBarcode) {
     elements.inboundBarcode.value = '';
     elements.inboundBarcode.classList.remove('input-valid', 'input-error');
   }
-  if (elements.inboundExpiryDate) elements.inboundExpiryDate.value = '';
-  if (elements.inboundOtdDate) elements.inboundOtdDate.value = '';
-
+  if (elements.inboundExpiryDate) {
+    elements.inboundExpiryDate.value = '';
+    elements.inboundExpiryDate.classList.remove('input-error');
+  }
+  state.selectedInboundProblem = null;
+  document.querySelectorAll('#inboundProblemsGrid .problem-card-btn').forEach(b => b.classList.remove('selected'));
   clearInboundErrors();
 
-  if (elements.inboundBoxNumber) {
-    elements.inboundBoxNumber.focus();
+  if (elements.inboundBarcode) {
+    elements.inboundBarcode.focus();
   }
 }
 
@@ -1663,33 +1789,36 @@ function submitInboundRecord(record) {
   const timeStr = formatTime(now);
   const clientRecordId = 'inb_' + now.getTime() + '_' + Math.random().toString(36).substring(2, 9);
 
-  const recountFormatted = record.recountDateFormatted || parseAndFormatDisplayDate(record.recountDate);
-  const otdFormatted = record.otdDateFormatted || parseAndFormatDisplayDate(record.otdDate);
-  const expiryFormatted = record.expiryDateFormatted || parseAndFormatDisplayDate(record.expiryDate);
-
+  // 17 колонок для листа "Фиксация входящего потока NEW"
   const inboundPayload = {
     clientRecordId: clientRecordId,
-    dateStr: dateStr,
-    timeStr: timeStr,
-    employeeId: state.currentUser?.id || '',
-    employeeName: state.currentUser?.name || '',
-    recountDate: recountFormatted,
-    boxNumber: record.boxNumber,
-    barcode: record.barcode,
-    expiryDate: expiryFormatted,
-    otdFixation: otdFormatted,
-    category1: '',
-    category2: '',
-    compensationPrice: ''
+    dateStr: dateStr,                       // 1. Дата операции
+    timeStr: timeStr,                       // 2. Время операции
+    employeeId: state.currentUser?.id || '',// 3. wms_id Сотрудника
+    employeeName: state.currentUser?.name || '', // 4. ФИО сотрудника
+    recountDate: '',                        // 5. Дата пересчета (с БД)
+    boxNumber: record.boxNumber,            // 6. Номер короба
+    barcode: record.barcode,                // 7. ШК товара
+    expiryDate: record.expiryDate,          // 8. Срок годности
+    otdFixation: '',                        // 9. ОТД фиксация (на ручнике)
+    problem: record.problemRu,              // 10. Причина фиксации
+    problemDisplay: record.problemDisplay,
+    description: '',                        // 11. Описание (Python)
+    category1: '',                          // 12. Категория 1 (Python)
+    category2: '',                          // 13. Категория 2 (Python)
+    compensationPrice: '',                  // 14. Цена компенсации (Python)
+    actNumber: '',                          // 15. Номер акта (Python)
+    recountTime: '',                        // 16. Время пересчета (Python)
+    recEmployee: ''                         // 17. Сотрудник (Python)
   };
 
   playSound('success');
   addInboundRecordToHistory(inboundPayload);
 
-  showToast(`✅ Короб № ${record.boxNumber} • ШК ${record.barcode}`, 'success');
+  showToast(`✅ Короб № ${record.boxNumber} • ${record.problemDisplay || record.problemRu} (${record.barcode})`, 'success');
 
-  // Очищаем форму ("чистим все. вносим все заново.")
-  resetInboundForm();
+  // Очищаем ШК, срок годности и выбранную причину, сохраняя короб для дальнейших позиций
+  resetInboundItemForm(true);
 
   if (!state.apiUrl || !navigator.onLine) {
     enqueueInboundOfflineRecord(inboundPayload);
@@ -1709,9 +1838,14 @@ function submitInboundRecord(record) {
     barcode: inboundPayload.barcode,
     expiryDate: inboundPayload.expiryDate,
     otdFixation: inboundPayload.otdFixation,
-    category1: '',
-    category2: '',
-    compensationPrice: ''
+    problem: inboundPayload.problem,
+    description: inboundPayload.description,
+    category1: inboundPayload.category1,
+    category2: inboundPayload.category2,
+    compensationPrice: inboundPayload.compensationPrice,
+    actNumber: inboundPayload.actNumber,
+    recountTime: inboundPayload.recountTime,
+    recEmployee: inboundPayload.recEmployee
   });
 
   fetch(`${state.apiUrl}?${queryParams.toString()}`, { method: 'GET' })
@@ -1740,29 +1874,50 @@ function fetchDynamicConfig() {
   fetch(`${state.apiUrl}?action=getConfig&t=${Date.now()}`)
     .then(res => res.json())
     .then(res => {
-      if (res.success && Array.isArray(res.problems) && res.problems.length > 0) {
-        state.problemsList = res.problems.map(item => {
-          const cleanRu = (typeof item === 'object' && item.ru) ? item.ru.trim() : String(item).trim();
-          let uzTranslation = (typeof item === 'object' && item.uz) ? item.uz.trim() : '';
-          if (!uzTranslation || uzTranslation === cleanRu) {
-            uzTranslation = getClientTranslation(cleanRu);
-          }
-
-          let icon = '📦';
-          for (const [key, ic] of Object.entries(PROBLEM_ICON_MAP)) {
-            if (cleanRu.toLowerCase().includes(key)) {
-              icon = ic;
-              break;
+      if (res.success) {
+        // 1. Причины Отгрузки
+        if (Array.isArray(res.problems) && res.problems.length > 0) {
+          state.problemsList = res.problems.map(item => {
+            const cleanRu = (typeof item === 'object' && item.ru) ? item.ru.trim() : String(item).trim();
+            let uzTranslation = (typeof item === 'object' && item.uz) ? item.uz.trim() : '';
+            if (!uzTranslation || uzTranslation === cleanRu) {
+              uzTranslation = getClientTranslation(cleanRu);
             }
-          }
 
-          return {
-            ru: cleanRu,
-            uz: uzTranslation || cleanRu,
-            icon: icon
-          };
-        });
-        renderProblemsGrid();
+            let icon = '📦';
+            for (const [key, ic] of Object.entries(PROBLEM_ICON_MAP)) {
+              if (cleanRu.toLowerCase().includes(key)) {
+                icon = ic;
+                break;
+              }
+            }
+
+            return {
+              ru: cleanRu,
+              uz: uzTranslation || cleanRu,
+              icon: icon
+            };
+          });
+          renderProblemsGrid();
+        }
+
+        // 2. Причины Входящего потока
+        if (Array.isArray(res.inboundProblems) && res.inboundProblems.length > 0) {
+          state.inboundProblemsList = res.inboundProblems.map(item => {
+            const cleanRu = (typeof item === 'object' && item.ru) ? item.ru.trim() : String(item).trim();
+            let uzTranslation = (typeof item === 'object' && item.uz) ? item.uz.trim() : '';
+            if (!uzTranslation || uzTranslation === cleanRu) {
+              uzTranslation = getClientTranslation(cleanRu);
+            }
+
+            return {
+              ru: cleanRu,
+              uz: uzTranslation || cleanRu,
+              icon: getProblemIcon(cleanRu)
+            };
+          });
+          renderInboundProblemsGrid();
+        }
       }
     })
     .catch(err => console.warn('Could not fetch dynamic config:', err));
@@ -1902,6 +2057,16 @@ function setupInboundListeners() {
     });
   }
 
+  if (elements.clearInboundExpiry) {
+    elements.clearInboundExpiry.addEventListener('click', () => {
+      elements.inboundExpiryDate.value = '';
+      const err = document.getElementById('inboundExpiryDateError');
+      if (err) err.classList.remove('visible');
+      elements.inboundExpiryDate.classList.remove('input-error');
+      elements.inboundExpiryDate.focus();
+    });
+  }
+
   // Автоконвертация раскладки при вводе и переход по Enter
   if (elements.inboundBoxNumber) {
     elements.inboundBoxNumber.addEventListener('input', () => {
@@ -1946,16 +2111,10 @@ function setupInboundListeners() {
       if (e.key === 'Enter') {
         e.preventDefault();
         const code = elements.inboundBarcode.value.trim();
-        if (code.length !== 13) {
+        if (code.length !== 13 && (!state.selectedInboundProblem || state.selectedInboundProblem.ru !== 'Нет штрихкода или он не читается')) {
           showInboundError('inboundBarcodeError', elements.inboundBarcode, t('barcode13Err'));
         } else {
-          if (!elements.inboundExpiryDate.value) {
-            elements.inboundExpiryDate.focus();
-          } else if (!elements.inboundOtdDate.value) {
-            elements.inboundOtdDate.focus();
-          } else {
-            handleInboundSubmit();
-          }
+          elements.inboundExpiryDate.focus();
         }
       }
     });
@@ -1966,25 +2125,17 @@ function setupInboundListeners() {
       const err = document.getElementById('inboundExpiryDateError');
       if (err) err.classList.remove('visible');
       elements.inboundExpiryDate.classList.remove('input-error');
-      if (elements.inboundExpiryDate.value && !elements.inboundOtdDate.value) {
-        elements.inboundOtdDate.focus();
+    });
+
+    elements.inboundExpiryDate.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (!state.selectedInboundProblem) {
+          showInboundProblemError(t('selectProblemFirst'));
+        } else {
+          handleInboundSubmit();
+        }
       }
-    });
-  }
-
-  if (elements.inboundOtdDate) {
-    elements.inboundOtdDate.addEventListener('change', () => {
-      const err = document.getElementById('inboundOtdDateError');
-      if (err) err.classList.remove('visible');
-      elements.inboundOtdDate.classList.remove('input-error');
-    });
-  }
-
-  if (elements.inboundRecountDate) {
-    elements.inboundRecountDate.addEventListener('change', () => {
-      const err = document.getElementById('inboundRecountDateError');
-      if (err) err.classList.remove('visible');
-      elements.inboundRecountDate.classList.remove('input-error');
     });
   }
 
@@ -2163,9 +2314,7 @@ function setupEventListeners() {
     // 3. Рабочий экран входящего потока
     else if (elements.inboundScreen && elements.inboundScreen.classList.contains('active')) {
       const isInboundInput = (
-        activeEl === elements.inboundRecountDate ||
         activeEl === elements.inboundBoxNumber ||
-        activeEl === elements.inboundOtdDate ||
         activeEl === elements.inboundBarcode ||
         activeEl === elements.inboundExpiryDate
       );

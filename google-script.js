@@ -70,21 +70,51 @@ function handleRequest(e) {
       var configSheet = ss.getSheetByName("Config");
       var configData = configSheet ? configSheet.getDataRange().getValues() : [];
       var problems = [];
+      var inboundProblems = [];
+
+      // Определяем колонку для причин входящего потока
+      var inboundColIdx = -1;
+      if (configData.length > 0) {
+        var headerRow = configData[0];
+        for (var c = 0; c < headerRow.length; c++) {
+          var hName = String(headerRow[c] || "").toLowerCase();
+          if (hName.indexOf("входящ") !== -1) {
+            inboundColIdx = c;
+            break;
+          }
+        }
+      }
+      // Если по заголовку не найдено, проверяем колонку E (индекс 4)
+      if (inboundColIdx === -1 && configData.length > 0 && configData[0].length >= 5) {
+        inboundColIdx = 4;
+      }
 
       for (var p = 1; p < configData.length; p++) {
+        // 1. Причины Отгрузки (Колонка A)
         var reasonRu = String(configData[p][0] || "").trim();
         if (reasonRu) {
-          var reasonUz = getUzbekTranslation(reasonRu);
           problems.push({
             ru: reasonRu,
-            uz: reasonUz
+            uz: getUzbekTranslation(reasonRu)
           });
+        }
+
+        // 2. Причины Входящего потока
+        if (inboundColIdx !== -1 && configData[p].length > inboundColIdx) {
+          var inbReasonRu = String(configData[p][inboundColIdx] || "").trim();
+          if (inbReasonRu) {
+            inboundProblems.push({
+              ru: inbReasonRu,
+              uz: getUzbekTranslation(inbReasonRu)
+            });
+          }
         }
       }
 
       response = {
         success: true,
-        problems: problems
+        problems: problems,
+        inboundProblems: inboundProblems
       };
 
     // 3. ДОБАВЛЕНИЕ ОДНОЙ ЗАПИСИ ИЛИ ПАКЕТА (ОФЛАЙН ОЧЕРЕДЬ) С ДЕДУПЛИКАЦИЕЙ
@@ -273,11 +303,10 @@ function handleRequest(e) {
 
     // 5. ДОБАВЛЕНИЕ ЗАПИСИ ВХОДЯЩЕГО ПОТОКА (ОДИНОЧНАЯ ИЛИ ПАКЕТ ОФЛАЙН-ОЧЕРЕДИ)
     } else if (action === "addInboundRecord" || action === "addInboundRecords") {
-      var inboundSheetName = "Фиксация входящего потока";
-      var inboundSheet = ss.getSheetByName(inboundSheetName);
+      var inboundSheet = ss.getSheetByName("Фиксация входящего потока NEW") || ss.getSheetByName("Фиксация входящего потока");
       if (!inboundSheet || inboundSheet.getLastRow() === 0) {
         setupSheet();
-        inboundSheet = ss.getSheetByName(inboundSheetName);
+        inboundSheet = ss.getSheetByName("Фиксация входящего потока NEW") || ss.getSheetByName("Фиксация входящего потока");
       }
       var cache = CacheService.getScriptCache();
       var empMap = getEmployeeMap(ss);
@@ -309,9 +338,10 @@ function handleRequest(e) {
           var recBarcode = String(rec.barcode || "").trim();
           var recExpiry = String(rec.expiryDate || "").trim();
           var recOtd = String(rec.otdFixation || "").trim();
+          var recProb = String(rec.problem || "").trim();
 
-          // 2. Дедупликация по последним строкам листа входящего потока (12 колонок)
-          if (isRecentInboundDuplicate(inboundSheet, recDate, recEmpId, recBox, recBarcode, recOtd, recTime)) {
+          // 2. Дедупликация по последним строкам листа входящего потока (17 колонок)
+          if (isRecentInboundDuplicate(inboundSheet, recDate, recEmpId, recBox, recBarcode, recProb, recTime)) {
             if (rId) cache.put("inbound_" + rId, "1", 21600);
             continue;
           }
@@ -326,14 +356,19 @@ function handleRequest(e) {
             recTime,                                 // 2. Время операции
             recEmpId,                                // 3. wms_id Сотрудника
             finalEmpName,                            // 4. ФИО сотрудника
-            recRecountDate,                          // 5. Дата пересчета
+            recRecountDate,                          // 5. Дата пересчета (с БД)
             recBox,                                  // 6. Номер короба
             recBarcode,                              // 7. ШК товара
             recExpiry,                               // 8. Срок годности
-            recOtd,                                  // 9. ОТД фиксация
-            rec.category1 || "",                     // 10. Категория 1
-            rec.category2 || "",                     // 11. Категория 2
-            rec.compensationPrice || ""              // 12. Цена компенсации
+            recOtd,                                  // 9. ОТД фиксация (на ручнике)
+            recProb,                                 // 10. Причина фиксации
+            rec.description || "",                   // 11. Описание (Python)
+            rec.category1 || "",                     // 12. Категория 1 (Python)
+            rec.category2 || "",                     // 13. Категория 2 (Python)
+            rec.compensationPrice || "",             // 14. Цена компенсации (Python)
+            rec.actNumber || "",                     // 15. Номер акта (Python)
+            rec.recountTime || "",                   // 16. Время пересчета (Python)
+            rec.recEmployee || ""                    // 17. Сотрудник (Python)
           ]);
 
           if (rId) processedIds.push(rId);
@@ -341,7 +376,7 @@ function handleRequest(e) {
 
         if (rows.length > 0) {
           var lastRow = inboundSheet.getLastRow();
-          inboundSheet.getRange(lastRow + 1, 1, rows.length, 12).setValues(rows);
+          inboundSheet.getRange(lastRow + 1, 1, rows.length, 17).setValues(rows);
 
           for (var p = 0; p < processedIds.length; p++) {
             cache.put("inbound_" + processedIds[p], "1", 21600);
@@ -372,8 +407,9 @@ function handleRequest(e) {
           var barcode = String(parameter.barcode || "").trim();
           var expiryDate = String(parameter.expiryDate || "").trim();
           var otdFixation = String(parameter.otdFixation || "").trim();
+          var problem = String(parameter.problem || "").trim();
 
-          if (isRecentInboundDuplicate(inboundSheet, opDate, empId, boxNumber, barcode, otdFixation, opTime)) {
+          if (isRecentInboundDuplicate(inboundSheet, opDate, empId, boxNumber, barcode, problem, opTime)) {
             if (clientRecordId) cache.put("inbound_" + clientRecordId, "1", 21600);
             response = {
               success: true,
@@ -391,18 +427,23 @@ function handleRequest(e) {
               opTime,                                 // 2. Время операции
               empId,                                  // 3. wms_id Сотрудника
               finalEmpName,                           // 4. ФИО сотрудника
-              recountDate,                            // 5. Дата пересчета
+              recountDate,                            // 5. Дата пересчета (с БД)
               boxNumber,                              // 6. Номер короба
               barcode,                                // 7. ШК товара
               expiryDate,                             // 8. Срок годности
-              otdFixation,                            // 9. ОТД фиксация
-              parameter.category1 || "",              // 10. Категория 1
-              parameter.category2 || "",              // 11. Категория 2
-              parameter.compensationPrice || ""       // 12. Цена компенсации
+              otdFixation,                            // 9. ОТД фиксация (на ручнике)
+              problem,                                // 10. Причина фиксации
+              parameter.description || "",            // 11. Описание (Python)
+              parameter.category1 || "",              // 12. Категория 1 (Python)
+              parameter.category2 || "",              // 13. Категория 2 (Python)
+              parameter.compensationPrice || "",      // 14. Цена компенсации (Python)
+              parameter.actNumber || "",              // 15. Номер акта (Python)
+              parameter.recountTime || "",            // 16. Время пересчета (Python)
+              parameter.recEmployee || ""             // 17. Сотрудник (Python)
             ];
 
             var lastRow = inboundSheet.getLastRow();
-            inboundSheet.getRange(lastRow + 1, 1, 1, 12).setValues([newRow]);
+            inboundSheet.getRange(lastRow + 1, 1, 1, 17).setValues([newRow]);
 
             if (clientRecordId) {
               cache.put("inbound_" + clientRecordId, "1", 21600);
@@ -418,7 +459,7 @@ function handleRequest(e) {
 
     // 6. ИСТОРИЯ ВХОДЯЩЕГО ПОТОКА СОТРУДНИКА
     } else if (action === "getInboundHistory") {
-      var inboundSheet = ss.getSheetByName("Фиксация входящего потока");
+      var inboundSheet = ss.getSheetByName("Фиксация входящего потока NEW") || ss.getSheetByName("Фиксация входящего потока");
       var lastRow = inboundSheet ? inboundSheet.getLastRow() : 0;
       var employeeId = String(parameter.employeeId || "").trim();
       var userLogs = [];
@@ -427,8 +468,9 @@ function handleRequest(e) {
         var maxRowsToRead = 300;
         var startRow = Math.max(2, lastRow - maxRowsToRead + 1);
         var numRows = lastRow - startRow + 1;
+        var numCols = Math.min(17, inboundSheet.getLastColumn());
 
-        var logData = inboundSheet.getRange(startRow, 1, numRows, 12).getValues();
+        var logData = inboundSheet.getRange(startRow, 1, numRows, numCols).getValues();
 
         for (var i = logData.length - 1; i >= 0; i--) {
           if (String(logData[i][2]).trim() === employeeId) {
@@ -439,7 +481,8 @@ function handleRequest(e) {
               boxNumber: logData[i][5],
               barcode: logData[i][6],
               expiryDate: logData[i][7],
-              otdFixation: logData[i][8]
+              otdFixation: logData[i][8],
+              problem: logData[i][9] || ""
             });
           }
           if (userLogs.length >= 25) break;
@@ -551,21 +594,22 @@ function isRecentDuplicate(logSheet, dateStr, employeeId, cargoPlace, barcode, p
   return false;
 }
 
-// Проверка на недавний дубликат в листе "Фиксация входящего потока"
-function isRecentInboundDuplicate(sheet, dateStr, employeeId, boxNumber, barcode, otdFixation, timeStr) {
+// Проверка на недавний дубликат в листе входящего потока
+function isRecentInboundDuplicate(sheet, dateStr, employeeId, boxNumber, barcode, problem, timeStr) {
   if (!sheet) return false;
   var lastRow = sheet.getLastRow();
   if (lastRow <= 1) return false;
 
   var checkCount = Math.min(50, lastRow - 1);
   var startRow = lastRow - checkCount + 1;
-  var recentValues = sheet.getRange(startRow, 1, checkCount, 12).getValues();
+  var numCols = Math.min(17, sheet.getLastColumn());
+  var recentValues = sheet.getRange(startRow, 1, checkCount, numCols).getValues();
 
   var cleanDate = String(dateStr || "").trim();
   var cleanEmpId = String(employeeId || "").trim();
   var cleanBox = String(boxNumber || "").trim();
   var cleanBarcode = String(barcode || "").trim();
-  var cleanOtd = String(otdFixation || "").trim();
+  var cleanProb = String(problem || "").trim();
   var targetSec = parseTimeToSeconds(timeStr);
 
   var tz = Session.getScriptTimeZone();
@@ -579,9 +623,9 @@ function isRecentInboundDuplicate(sheet, dateStr, employeeId, boxNumber, barcode
     var rEmpId = String(row[2] || "").trim();
     var rBox = String(row[5] || "").trim();
     var rBarcode = String(row[6] || "").trim();
-    var rOtd = String(row[8] || "").trim();
+    var rProb = row.length > 9 ? String(row[9] || "").trim() : "";
 
-    if (rDate === cleanDate && rEmpId === cleanEmpId && rBox === cleanBox && rBarcode === cleanBarcode && rOtd === cleanOtd) {
+    if (rDate === cleanDate && rEmpId === cleanEmpId && rBox === cleanBox && rBarcode === cleanBarcode && (!cleanProb || rProb === cleanProb)) {
       var rSec = parseTimeToSeconds(row[1]);
       if (targetSec !== null && rSec !== null) {
         var diff = Math.abs(targetSec - rSec);
@@ -601,7 +645,7 @@ function autoSetupIfNeeded(ss) {
   var empSheet = ss.getSheetByName("Employees");
   var configSheet = ss.getSheetByName("Config");
   var logSheet = ss.getSheetByName("Log");
-  var inboundSheet = ss.getSheetByName("Фиксация входящего потока");
+  var inboundSheet = ss.getSheetByName("Фиксация входящего потока NEW") || ss.getSheetByName("Фиксация входящего потока");
 
   if (!empSheet || !configSheet || !logSheet || !inboundSheet || inboundSheet.getLastRow() === 0) {
     setupSheet();
@@ -628,39 +672,82 @@ function setupSheet() {
     empSheet.autoResizeColumns(1, 3);
   }
 
-  // 2. Лист Config (15 причин проблем)
+  // 2. Лист Config (Причины проблем для Отгрузки и Входящего потока)
+  var defaultInboundReasons = [
+    "Без упаковки",
+    "Порвана упаковка (коробка)",
+    "Порвана мягкая упаковка (пакет)",
+    "Упакован с нарушением оферты",
+    "Без маркировки",
+    "Без описания товара",
+    "Неверное количество",
+    "Срок годности указан неверно",
+    "Без срока годности",
+    "Товар сломан, деформирован",
+    "Нет товарного вида",
+    "Запрещённый товар",
+    "Протечка жидкости",
+    "Нет штрихкода или он не читается",
+    "Неверный товар (цвет, размер)"
+  ];
+
   var configSheet = ss.getSheetByName("Config");
   if (!configSheet) {
     configSheet = ss.insertSheet("Config");
-    configSheet.appendRow(["Причины проблем", "Параметры Telegram", "Значения"]);
+    configSheet.appendRow(["Причины проблем", "Параметры Telegram", "Значения", "", "Причины входящего потока"]);
 
     var reasons = [
       "Протечка жидкости",
-      "Порвана упаковка (пакет)",
+      "Порвана мягкая упаковка (пакет / пачка бумаги)",
       "Нет товарного вида",
-      "Товар сломан",
+      "Товар сломан, деформирован",
       "Порвана упаковка (коробка)",
-      "Помята упаковка (коробка)",
-      "Скол, вмятина, трещина",
-      "Разбит стеклянный товар",
-      "Некомплект",
-      "Грязный товар",
-      "Срок годности",
+      "Помята, деформирована коробка",
+      "Скол, вмятина, трещина на товаре",
+      "Разбит хрупкий товар",
+      "Некомплект, не хватает детали",
+      "Грязный товар, использованный",
+      "Срок годности, отсутствие срока годности",
       "Дефект одежды",
       "Пустая упаковка",
-      "Личная гигиена упаковка",
+      "Личная гигиена порвана упаковка",
       "Испорчен другим товаром"
     ];
 
-    for (var i = 0; i < reasons.length; i++) {
-      configSheet.appendRow([reasons[i], "", ""]);
+    var maxLen = Math.max(reasons.length, defaultInboundReasons.length);
+    for (var i = 0; i < maxLen; i++) {
+      var shipR = i < reasons.length ? reasons[i] : "";
+      var inbR = i < defaultInboundReasons.length ? defaultInboundReasons[i] : "";
+      configSheet.appendRow([shipR, "", "", "", inbR]);
     }
 
-    configSheet.getRange("A1:C1")
+    configSheet.getRange("A1:E1")
       .setBackground("#7000ff")
       .setFontColor("#ffffff")
       .setFontWeight("bold");
-    configSheet.autoResizeColumns(1, 3);
+    configSheet.autoResizeColumns(1, 5);
+  } else {
+    // Если Config уже есть, проверяем/добавляем колонку "Причины входящего потока"
+    var configValues = configSheet.getDataRange().getValues();
+    var hasInboundCol = false;
+    if (configValues.length > 0) {
+      for (var col = 0; col < configValues[0].length; col++) {
+        if (String(configValues[0][col] || "").toLowerCase().indexOf("входящ") !== -1) {
+          hasInboundCol = true;
+          break;
+        }
+      }
+    }
+    if (!hasInboundCol) {
+      configSheet.getRange(1, 5).setValue("Причины входящего потока")
+        .setBackground("#7000ff")
+        .setFontColor("#ffffff")
+        .setFontWeight("bold");
+      for (var j = 0; j < defaultInboundReasons.length; j++) {
+        configSheet.getRange(j + 2, 5).setValue(defaultInboundReasons[j]);
+      }
+      configSheet.autoResizeColumns(1, 5);
+    }
   }
 
   // 3. Лист Log (14 утвержденных колонок для Отгрузки)
@@ -691,10 +778,10 @@ function setupSheet() {
     logSheet.autoResizeColumns(1, 14);
   }
 
-  // 4. Лист Фиксация входящего потока (13 колонок)
-  var inboundSheetName = "Фиксация входящего потока";
-  var inboundSheet = ss.getSheetByName(inboundSheetName);
-  var inboundHeaders = [
+  // 4. Лист Фиксация входящего потока NEW (17 утвержденных колонок)
+  var inboundNewSheetName = "Фиксация входящего потока NEW";
+  var inboundNewSheet = ss.getSheetByName(inboundNewSheetName);
+  var inboundNewHeaders = [
     "Дата операции",
     "Время операции",
     "wms_id Сотрудника",
@@ -704,26 +791,31 @@ function setupSheet() {
     "ШК товара",
     "Срок годности",
     "ОТД фиксация",
+    "Причина фиксации",
+    "Описание",
     "Категория 1",
     "Категория 2",
-    "Цена компенсации"
+    "Цена компенсации",
+    "Номер акта",
+    "Время пересчета",
+    "Сотрудник"
   ];
 
-  if (!inboundSheet) {
-    inboundSheet = ss.insertSheet(inboundSheetName);
-    inboundSheet.appendRow(inboundHeaders);
-    inboundSheet.getRange("A1:L1")
+  if (!inboundNewSheet) {
+    inboundNewSheet = ss.insertSheet(inboundNewSheetName);
+    inboundNewSheet.appendRow(inboundNewHeaders);
+    inboundNewSheet.getRange("A1:Q1")
       .setBackground("#7000ff")
       .setFontColor("#ffffff")
       .setFontWeight("bold");
-    inboundSheet.autoResizeColumns(1, 12);
-  } else if (inboundSheet.getLastRow() === 0) {
-    inboundSheet.appendRow(inboundHeaders);
-    inboundSheet.getRange("A1:L1")
+    inboundNewSheet.autoResizeColumns(1, 17);
+  } else if (inboundNewSheet.getLastRow() === 0) {
+    inboundNewSheet.appendRow(inboundNewHeaders);
+    inboundNewSheet.getRange("A1:Q1")
       .setBackground("#7000ff")
       .setFontColor("#ffffff")
       .setFontWeight("bold");
-    inboundSheet.autoResizeColumns(1, 12);
+    inboundNewSheet.autoResizeColumns(1, 17);
   }
 
   var defaultSheet = ss.getSheetByName("Sheet1") || ss.getSheetByName("Лист1");
@@ -741,26 +833,45 @@ function setupSheet() {
 var CURATED_TRANSLATIONS = {
   "протечка жидкости": "Суюқлик оқиши",
   "порвана мягкая упаковка (пакет)": "Юмшоқ қадоқ йиртилган (пакет)",
+  "порвана мягкая упаковка (пакет / пачка бумаги)": "Юмшоқ қадоқ йиртилган (пакет)",
   "порвана упаковка (пакет)": "Пакет қадоғи йиртилган",
   "нет товарного вида": "Товарлик кўриниши йўқ",
   "товар сломан, деформирован": "Маҳсулот синган, деформацияланган",
   "товар сломан": "Маҳсулот синган",
   "порвана упаковка (коробка)": "Қути қадоғи йиртилган",
   "помята упаковка (коробка)": "Қути қадоғи эзилган",
+  "помята, деформирована коробка": "Қути қадоғи эзилган",
   "скол, вмятина, трещина": "Учган, эзилган, ёриқ",
+  "скол, вмятина, трещина на товаре": "Учган, эзилган, ёриқ",
   "разбит хрупкий товар": "Синган, мўрт маҳсулот",
   "разбит стеклянный товар": "Шиша маҳсулот синган",
   "некомплект": "Тўлиқ эмас (кам-кўст)",
+  "некомплект, не хватает детали": "Тўлиқ эмас (кам-кўст)",
   "грязный товар": "Маҳсулот ифлосланган",
+  "грязный товар, использованный": "Маҳсулот ифлосланган",
   "срок годности": "Яроқлилик муддати ўтган",
+  "срок годности, отсутствие срока годности": "Яроқлилик муддати ўтган / йўқ",
   "дефект одежды": "Кийим нуқсони",
   "пустая упаковка": "Бўш қадоқ",
   "личная гигиена упаковка": "Шахсий гигиена қадоғи",
+  "личная гигиена порвана упаковка": "Шахсий гигиена қадоғи йиртилган",
   "испорчен другим товаром": "Бошқа маҳсулотдан зарарланган",
   "упаковка вскрыта/ нарушена пломба": "Қадоқ очилган / пломба бузилган",
   "упаковка вскрыта/нарушена пломба": "Қадоқ очилган / пломба бузилган",
   "мокрая упаковка, имеет следы влаги": "Ҳўл қадоқ, намлик излари бор",
-  "грязная упаковка": "Ифлосланган қадоқ"
+  "грязная упаковка": "Ифлосланган қадоқ",
+  "без упаковки": "Қадоқсиз",
+  "упакован с нарушением оферты": "Оферта қоидаси бузилган",
+  "без маркировки": "Маркировкасиз",
+  "без описания товара": "Маҳсулот тавсифи йўқ",
+  "неверное количество": "Нотўғри миқдор",
+  "срок годности указан неверно": "Яроқлилик муддати нотўғри кўрсатилган",
+  "без срока годности": "Яроқлилик муддати йўқ",
+  "запрещённый товар": "Тақиқланган маҳсулот",
+  "запрещенный товар": "Тақиқланган маҳсулот",
+  "нет штрихкода или он не читается": "Штрих-код йўқ ёки ўқилмайди",
+  "неверный товар (цвет, размер)": "Нотўғри маҳсулот (ранг, ўлчам)",
+  "неверный товар": "Нотўғри маҳсулот"
 };
 
 function getUzbekTranslation(textRu) {
