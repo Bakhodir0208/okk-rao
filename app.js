@@ -1789,27 +1789,26 @@ function submitInboundRecord(record) {
   const timeStr = formatTime(now);
   const clientRecordId = 'inb_' + now.getTime() + '_' + Math.random().toString(36).substring(2, 9);
 
-  // 17 колонок для листа "Фиксация входящего потока NEW"
+  // 16 колонок для листа "Фиксация входящего потока NEW"
   const inboundPayload = {
     clientRecordId: clientRecordId,
     dateStr: dateStr,                       // 1. Дата операции
     timeStr: timeStr,                       // 2. Время операции
     employeeId: state.currentUser?.id || '',// 3. wms_id Сотрудника
     employeeName: state.currentUser?.name || '', // 4. ФИО сотрудника
-    recountDate: '',                        // 5. Дата пересчета (с БД)
-    boxNumber: record.boxNumber,            // 6. Номер короба
-    barcode: record.barcode,                // 7. ШК товара
-    expiryDate: record.expiryDate,          // 8. Срок годности
-    otdFixation: '',                        // 9. ОТД фиксация (на ручнике)
-    problem: record.problemRu,              // 10. Причина фиксации
+    boxNumber: record.boxNumber,            // 5. Номер короба
+    barcode: record.barcode,                // 6. ШК товара
+    expiryDate: record.expiryDate,          // 7. Срок годности
+    otdFixation: '',                        // 8. ОТД фиксация (на ручнике)
+    problem: record.problemRu,              // 9. Причина фиксации
     problemDisplay: record.problemDisplay,
-    description: '',                        // 11. Описание (Python)
-    category1: '',                          // 12. Категория 1 (Python)
-    category2: '',                          // 13. Категория 2 (Python)
-    compensationPrice: '',                  // 14. Цена компенсации (Python)
-    actNumber: '',                          // 15. Номер акта (Python)
-    recountTime: '',                        // 16. Время пересчета (Python)
-    recEmployee: ''                         // 17. Сотрудник (Python)
+    description: '',                        // 10. Описание (Python)
+    category1: '',                          // 11. Категория 1 (Python)
+    category2: '',                          // 12. Категория 2 (Python)
+    compensationPrice: '',                  // 13. Цена компенсации (Python)
+    actNumber: '',                          // 14. Номер акта (Python)
+    recountTime: '',                        // 15. Время пересчета (Python)
+    recEmployee: ''                         // 16. Сотрудник (Python)
   };
 
   playSound('success');

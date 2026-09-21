@@ -111,6 +111,41 @@ function handleRequest(e) {
         }
       }
 
+      // Если колонка причин входящего потока еще не заполнена на листе Config, автоматически инициализируем колонку E
+      if (configSheet && inboundProblems.length === 0) {
+        var defaultInboundList = [
+          "Без упаковки",
+          "Порвана упаковка (коробка)",
+          "Порвана мягкая упаковка (пакет)",
+          "Упакован с нарушением оферты",
+          "Без маркировки",
+          "Без описания товара",
+          "Неверное количество",
+          "Срок годности указан неверно",
+          "Без срока годности",
+          "Товар сломан, деформирован",
+          "Нет товарного вида",
+          "Запрещённый товар",
+          "Протечка жидкости",
+          "Нет штрихкода или он не читается",
+          "Неверный товар (цвет, размер)"
+        ];
+        try {
+          configSheet.getRange(1, 5).setValue("Причины входящего потока")
+            .setBackground("#7000ff")
+            .setFontColor("#ffffff")
+            .setFontWeight("bold");
+          for (var d = 0; d < defaultInboundList.length; d++) {
+            configSheet.getRange(d + 2, 5).setValue(defaultInboundList[d]);
+            inboundProblems.push({
+              ru: defaultInboundList[d],
+              uz: getUzbekTranslation(defaultInboundList[d])
+            });
+          }
+          configSheet.autoResizeColumns(1, 5);
+        } catch (cfgErr) {}
+      }
+
       response = {
         success: true,
         problems: problems,
@@ -356,19 +391,18 @@ function handleRequest(e) {
             recTime,                                 // 2. Время операции
             recEmpId,                                // 3. wms_id Сотрудника
             finalEmpName,                            // 4. ФИО сотрудника
-            recRecountDate,                          // 5. Дата пересчета (с БД)
-            recBox,                                  // 6. Номер короба
-            recBarcode,                              // 7. ШК товара
-            recExpiry,                               // 8. Срок годности
-            recOtd,                                  // 9. ОТД фиксация (на ручнике)
-            recProb,                                 // 10. Причина фиксации
-            rec.description || "",                   // 11. Описание (Python)
-            rec.category1 || "",                     // 12. Категория 1 (Python)
-            rec.category2 || "",                     // 13. Категория 2 (Python)
-            rec.compensationPrice || "",             // 14. Цена компенсации (Python)
-            rec.actNumber || "",                     // 15. Номер акта (Python)
-            rec.recountTime || "",                   // 16. Время пересчета (Python)
-            rec.recEmployee || ""                    // 17. Сотрудник (Python)
+            recBox,                                  // 5. Номер короба
+            recBarcode,                              // 6. ШК товара
+            recExpiry,                               // 7. Срок годности
+            recOtd,                                  // 8. ОТД фиксация (на ручнике)
+            recProb,                                 // 9. Причина фиксации
+            rec.description || "",                   // 10. Описание (Python)
+            rec.category1 || "",                     // 11. Категория 1 (Python)
+            rec.category2 || "",                     // 12. Категория 2 (Python)
+            rec.compensationPrice || "",             // 13. Цена компенсации (Python)
+            rec.actNumber || "",                     // 14. Номер акта (Python)
+            rec.recountTime || "",                   // 15. Время пересчета (Python)
+            rec.recEmployee || ""                    // 16. Сотрудник (Python)
           ]);
 
           if (rId) processedIds.push(rId);
@@ -376,7 +410,7 @@ function handleRequest(e) {
 
         if (rows.length > 0) {
           var lastRow = inboundSheet.getLastRow();
-          inboundSheet.getRange(lastRow + 1, 1, rows.length, 17).setValues(rows);
+          inboundSheet.getRange(lastRow + 1, 1, rows.length, 16).setValues(rows);
 
           for (var p = 0; p < processedIds.length; p++) {
             cache.put("inbound_" + processedIds[p], "1", 21600);
@@ -402,7 +436,6 @@ function handleRequest(e) {
           var opDate = parameter.dateStr || defaultDateStr;
           var opTime = parameter.timeStr || defaultTimeStr;
           var empId = String(parameter.employeeId || "").trim();
-          var recountDate = String(parameter.recountDate || "").trim();
           var boxNumber = String(parameter.boxNumber || parameter.actNumber || "").trim();
           var barcode = String(parameter.barcode || "").trim();
           var expiryDate = String(parameter.expiryDate || "").trim();
@@ -427,23 +460,22 @@ function handleRequest(e) {
               opTime,                                 // 2. Время операции
               empId,                                  // 3. wms_id Сотрудника
               finalEmpName,                           // 4. ФИО сотрудника
-              recountDate,                            // 5. Дата пересчета (с БД)
-              boxNumber,                              // 6. Номер короба
-              barcode,                                // 7. ШК товара
-              expiryDate,                             // 8. Срок годности
-              otdFixation,                            // 9. ОТД фиксация (на ручнике)
-              problem,                                // 10. Причина фиксации
-              parameter.description || "",            // 11. Описание (Python)
-              parameter.category1 || "",              // 12. Категория 1 (Python)
-              parameter.category2 || "",              // 13. Категория 2 (Python)
-              parameter.compensationPrice || "",      // 14. Цена компенсации (Python)
-              parameter.actNumber || "",              // 15. Номер акта (Python)
-              parameter.recountTime || "",            // 16. Время пересчета (Python)
-              parameter.recEmployee || ""             // 17. Сотрудник (Python)
+              boxNumber,                              // 5. Номер короба
+              barcode,                                // 6. ШК товара
+              expiryDate,                             // 7. Срок годности
+              otdFixation,                            // 8. ОТД фиксация (на ручнике)
+              problem,                                // 9. Причина фиксации
+              parameter.description || "",            // 10. Описание (Python)
+              parameter.category1 || "",              // 11. Категория 1 (Python)
+              parameter.category2 || "",              // 12. Категория 2 (Python)
+              parameter.compensationPrice || "",      // 13. Цена компенсации (Python)
+              parameter.actNumber || "",              // 14. Номер акта (Python)
+              parameter.recountTime || "",            // 15. Время пересчета (Python)
+              parameter.recEmployee || ""             // 16. Сотрудник (Python)
             ];
 
             var lastRow = inboundSheet.getLastRow();
-            inboundSheet.getRange(lastRow + 1, 1, 1, 17).setValues([newRow]);
+            inboundSheet.getRange(lastRow + 1, 1, 1, 16).setValues([newRow]);
 
             if (clientRecordId) {
               cache.put("inbound_" + clientRecordId, "1", 21600);
@@ -468,7 +500,7 @@ function handleRequest(e) {
         var maxRowsToRead = 300;
         var startRow = Math.max(2, lastRow - maxRowsToRead + 1);
         var numRows = lastRow - startRow + 1;
-        var numCols = Math.min(17, inboundSheet.getLastColumn());
+        var numCols = Math.min(16, inboundSheet.getLastColumn());
 
         var logData = inboundSheet.getRange(startRow, 1, numRows, numCols).getValues();
 
@@ -477,12 +509,11 @@ function handleRequest(e) {
             userLogs.push({
               date: logData[i][0],
               time: logData[i][1],
-              recountDate: logData[i][4],
-              boxNumber: logData[i][5],
-              barcode: logData[i][6],
-              expiryDate: logData[i][7],
-              otdFixation: logData[i][8],
-              problem: logData[i][9] || ""
+              boxNumber: logData[i][4],
+              barcode: logData[i][5],
+              expiryDate: logData[i][6],
+              otdFixation: logData[i][7],
+              problem: logData[i][8] || ""
             });
           }
           if (userLogs.length >= 25) break;
@@ -602,7 +633,7 @@ function isRecentInboundDuplicate(sheet, dateStr, employeeId, boxNumber, barcode
 
   var checkCount = Math.min(50, lastRow - 1);
   var startRow = lastRow - checkCount + 1;
-  var numCols = Math.min(17, sheet.getLastColumn());
+  var numCols = Math.min(16, sheet.getLastColumn());
   var recentValues = sheet.getRange(startRow, 1, checkCount, numCols).getValues();
 
   var cleanDate = String(dateStr || "").trim();
@@ -621,9 +652,9 @@ function isRecentInboundDuplicate(sheet, dateStr, employeeId, boxNumber, barcode
       : String(row[0] || "").trim();
 
     var rEmpId = String(row[2] || "").trim();
-    var rBox = String(row[5] || "").trim();
-    var rBarcode = String(row[6] || "").trim();
-    var rProb = row.length > 9 ? String(row[9] || "").trim() : "";
+    var rBox = String(row[4] || "").trim();
+    var rBarcode = String(row[5] || "").trim();
+    var rProb = row.length > 8 ? String(row[8] || "").trim() : "";
 
     if (rDate === cleanDate && rEmpId === cleanEmpId && rBox === cleanBox && rBarcode === cleanBarcode && (!cleanProb || rProb === cleanProb)) {
       var rSec = parseTimeToSeconds(row[1]);
@@ -647,7 +678,22 @@ function autoSetupIfNeeded(ss) {
   var logSheet = ss.getSheetByName("Log");
   var inboundSheet = ss.getSheetByName("Фиксация входящего потока NEW") || ss.getSheetByName("Фиксация входящего потока");
 
-  if (!empSheet || !configSheet || !logSheet || !inboundSheet || inboundSheet.getLastRow() === 0) {
+  var needsConfigInbound = false;
+  if (configSheet) {
+    var cData = configSheet.getDataRange().getValues();
+    var hasInbound = false;
+    if (cData.length > 0) {
+      for (var c = 0; c < cData[0].length; c++) {
+        if (String(cData[0][c] || "").toLowerCase().indexOf("входящ") !== -1) {
+          hasInbound = true;
+          break;
+        }
+      }
+    }
+    if (!hasInbound) needsConfigInbound = true;
+  }
+
+  if (!empSheet || !configSheet || !logSheet || !inboundSheet || inboundSheet.getLastRow() === 0 || needsConfigInbound) {
     setupSheet();
   }
 }
@@ -778,7 +824,7 @@ function setupSheet() {
     logSheet.autoResizeColumns(1, 14);
   }
 
-  // 4. Лист Фиксация входящего потока NEW (17 утвержденных колонок)
+  // 4. Лист Фиксация входящего потока NEW (16 утвержденных колонок)
   var inboundNewSheetName = "Фиксация входящего потока NEW";
   var inboundNewSheet = ss.getSheetByName(inboundNewSheetName);
   var inboundNewHeaders = [
@@ -786,7 +832,6 @@ function setupSheet() {
     "Время операции",
     "wms_id Сотрудника",
     "ФИО сотрудника",
-    "Дата пересчета",
     "Номер короба",
     "ШК товара",
     "Срок годности",
@@ -804,18 +849,18 @@ function setupSheet() {
   if (!inboundNewSheet) {
     inboundNewSheet = ss.insertSheet(inboundNewSheetName);
     inboundNewSheet.appendRow(inboundNewHeaders);
-    inboundNewSheet.getRange("A1:Q1")
+    inboundNewSheet.getRange("A1:P1")
       .setBackground("#7000ff")
       .setFontColor("#ffffff")
       .setFontWeight("bold");
-    inboundNewSheet.autoResizeColumns(1, 17);
+    inboundNewSheet.autoResizeColumns(1, 16);
   } else if (inboundNewSheet.getLastRow() === 0) {
     inboundNewSheet.appendRow(inboundNewHeaders);
-    inboundNewSheet.getRange("A1:Q1")
+    inboundNewSheet.getRange("A1:P1")
       .setBackground("#7000ff")
       .setFontColor("#ffffff")
       .setFontWeight("bold");
-    inboundNewSheet.autoResizeColumns(1, 17);
+    inboundNewSheet.autoResizeColumns(1, 16);
   }
 
   var defaultSheet = ss.getSheetByName("Sheet1") || ss.getSheetByName("Лист1");
