@@ -874,6 +874,15 @@ function parseTimestampToMillis_(val) {
   return null;
 }
 
+// Функция для быстрой проверки и авторизации доступа к таблице приёмки в редакторе скриптов
+function testCheckExpiry() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var testBarcode = "4600680036618";
+  var res = checkBarcodeExpiry_(ss, testBarcode);
+  Logger.log("Результат проверки ШК " + testBarcode + ": " + JSON.stringify(res));
+  return res;
+}
+
 // Автоматическая проверка и настройка листов при первом вызове
 function autoSetupIfNeeded(ss) {
   var empSheet = ss.getSheetByName("Employees");
