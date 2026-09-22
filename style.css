@@ -1461,3 +1461,104 @@ body {
   font-weight: 700;
   letter-spacing: 0.5px;
 }
+
+/* ═══════════════════════════════════════════
+   МОДАЛЬНОЕ ОКНО: БЕЗ МАРКИРОВКИ (ПРОВАЛИВАНИЕ)
+═══════════════════════════════════════════ */
+.no-marking-card {
+  max-width: 520px;
+  background: #110d24;
+  border: 1px solid rgba(0, 230, 118, 0.3);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65), 0 0 28px rgba(0, 230, 118, 0.16);
+}
+
+.no-marking-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 480px) {
+  .no-marking-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.no-marking-opt-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 5px;
+  padding: 14px 14px;
+  background: rgba(22, 17, 44, 0.85);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.no-marking-opt-btn:hover {
+  background: rgba(30, 24, 60, 0.95);
+  border-color: rgba(0, 230, 118, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 230, 118, 0.18);
+}
+
+.no-marking-opt-btn:active {
+  transform: scale(0.97);
+}
+
+.no-marking-opt-btn.selected {
+  background: linear-gradient(135deg, rgba(0, 230, 118, 0.22) 0%, rgba(0, 176, 255, 0.18) 100%);
+  border-color: #00e676;
+  box-shadow: 0 0 18px rgba(0, 230, 118, 0.35);
+}
+
+.no-marking-opt-icon {
+  font-size: 24px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.no-marking-opt-title {
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.25;
+}
+
+.no-marking-opt-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+.no-marking-opt-btn.selected .no-marking-opt-title {
+  color: #00e676;
+}
+
+/* Бейдж выбранной подпричины на карточке дефекта */
+.problem-sub-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #00e676;
+  background: rgba(0, 230, 118, 0.14);
+  border: 1px solid rgba(0, 230, 118, 0.35);
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-top: 4px;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  animation: fadeIn 0.25s ease-out;
+}
+

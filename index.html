@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="style.css?v=2.1.0">
+  <link rel="stylesheet" href="style.css?v=2.2.0">
 </head>
 <body>
 
@@ -515,6 +515,47 @@
     </div>
   </div>
 
+  <!-- МОДАЛЬНОЕ ОКНО: УТОЧНЕНИЕ ПРИЧИНЫ "БЕЗ МАРКИРОВКИ" -->
+  <div id="noMarkingModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="noMarkingModalTitle">
+    <div class="modal-card no-marking-card">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+        <span style="font-size: 24px;">🏷️</span>
+        <h3 id="noMarkingModalTitle" data-i18n="noMarkingModalTitle" style="margin: 0;">Без маркировки</h3>
+      </div>
+      <p id="noMarkingModalDesc" data-i18n="noMarkingModalDesc" style="margin-bottom: 16px;">Выберите подкатегорию товара без маркировки:</p>
+
+      <div class="no-marking-grid">
+        <button type="button" class="no-marking-opt-btn" data-sub-ru="Asl Belgisi" data-sub-uz="Asl Belgisi" data-icon="🛡️">
+          <span class="no-marking-opt-icon">🛡️</span>
+          <span class="no-marking-opt-title" data-i18n="subOptAsl">Asl Belgisi</span>
+          <span class="no-marking-opt-sub" data-i18n="subOptAslDesc">Обязательная цифровая маркировка</span>
+        </button>
+
+        <button type="button" class="no-marking-opt-btn" data-sub-ru="Товар из 2 частей" data-sub-uz="Товар 2 қисмдан иборат" data-icon="🧩">
+          <span class="no-marking-opt-icon">🧩</span>
+          <span class="no-marking-opt-title" data-i18n="subOpt2Parts">Товар из 2 частей</span>
+          <span class="no-marking-opt-sub" data-i18n="subOpt2PartsDesc">Состоит из 2 частей</span>
+        </button>
+
+        <button type="button" class="no-marking-opt-btn" data-sub-ru="Продаётся комплектом" data-sub-uz="Тўплам ҳолида сотилади" data-icon="📦">
+          <span class="no-marking-opt-icon">📦</span>
+          <span class="no-marking-opt-title" data-i18n="subOptBundle">Продаётся комплектом</span>
+          <span class="no-marking-opt-sub" data-i18n="subOptBundleDesc">Комплектный товар</span>
+        </button>
+
+        <button type="button" class="no-marking-opt-btn" data-sub-ru="Осторожно хрупкое" data-sub-uz="Эҳтиёт бўлинг, синувчан" data-icon="🍷">
+          <span class="no-marking-opt-icon">🍷</span>
+          <span class="no-marking-opt-title" data-i18n="subOptFragile">Осторожно хрупкое</span>
+          <span class="no-marking-opt-sub" data-i18n="subOptFragileDesc">Хрупкое изделие</span>
+        </button>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 18px;">
+        <button type="button" id="cancelNoMarkingBtn" class="btn btn-secondary" style="width: 100%;" data-i18n="cancel">Отмена</button>
+      </div>
+    </div>
+  </div>
+
   <!-- МОДАЛЬНОЕ ОКНО: НАСТРОЙКИ СЕРВЕРА APPS SCRIPT -->
   <div id="settingsModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
     <div class="modal-card">
@@ -540,6 +581,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=2.1.0"></script>
+  <script src="app.js?v=2.2.0"></script>
 </body>
 </html>

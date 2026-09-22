@@ -73,6 +73,15 @@ DEFAULT_INBOUND_PROBLEMS.forEach(p => {
   RU_TO_UZ_PROBLEMS_MAP[p.ru.toLowerCase().trim()] = p.uz;
 });
 
+const SUB_PROBLEMS_MAP = {
+  'без маркировки: asl belgisi': 'Маркировкасиз: Asl Belgisi',
+  'без маркировки: товар из 2 частей': 'Маркировкасиз: Товар 2 қисмдан иборат',
+  'без маркировки: продаётся комплектом': 'Маркировкасиз: Тўплам ҳолида сотилади',
+  'без маркировки: продается комплектом': 'Маркировкасиз: Тўплам ҳолида сотилади',
+  'без маркировки: осторожно хрупкое': 'Маркировкасиз: Эҳтиёт бўлинг, синувчан'
+};
+Object.assign(RU_TO_UZ_PROBLEMS_MAP, SUB_PROBLEMS_MAP);
+
 const I18N = {
   ru: {
     brandBadge: 'ОКК • Контроль качества • РАО',
@@ -154,7 +163,17 @@ const I18N = {
     confirmProblem: 'Причина фиксации:',
     enterBoxNumber: 'Введите номер короба',
     enterExpiryDate: 'Укажите срок годности',
-    noExpiryBtn: 'Без срока годности'
+    noExpiryBtn: 'Без срока годности',
+    noMarkingModalTitle: 'Без маркировки',
+    noMarkingModalDesc: 'Выберите подкатегорию товара без маркировки:',
+    subOptAsl: 'Asl Belgisi',
+    subOptAslDesc: 'Обязательная цифровая маркировка',
+    subOpt2Parts: 'Товар из 2 частей',
+    subOpt2PartsDesc: 'Состоит из 2 частей',
+    subOptBundle: 'Продаётся комплектом',
+    subOptBundleDesc: 'Комплектный товар',
+    subOptFragile: 'Осторожно хрупкое',
+    subOptFragileDesc: 'Хрупкое изделие'
   },
   uz: {
     brandBadge: 'ОКК • Сифат назорати • РАО',
@@ -235,7 +254,17 @@ const I18N = {
     selectProblemFirst: 'Илтимос, аввал муаммо сабабини танланг!',
     enterBoxNumber: 'Қути рақамини киритинг',
     enterExpiryDate: 'Яроқлилик муддатини танланг',
-    noExpiryBtn: 'Яроқлилик муддати йўқ'
+    noExpiryBtn: 'Яроқлилик муддати йўқ',
+    noMarkingModalTitle: 'Маркировка тури',
+    noMarkingModalDesc: 'Маркировкасиз бўлиш сабабини танланг:',
+    subOptAsl: 'Asl Belgisi',
+    subOptAslDesc: 'Мажбурий рақамли маркировка',
+    subOpt2Parts: 'Товар 2 қисмдан иборат',
+    subOpt2PartsDesc: '2 қисмдан иборат бўлган товар',
+    subOptBundle: 'Тўплам ҳолида сотилади',
+    subOptBundleDesc: 'Бир нечта дона тўплами',
+    subOptFragile: 'Эҳтиёт бўлинг, синувчан',
+    subOptFragileDesc: 'Синувчан, эҳтиёткорлик талаб этилади'
   }
 };
 
@@ -300,6 +329,15 @@ function getClientTranslation(ruName) {
   // 1. Проверяем словарь точных соответствий
   if (RU_TO_UZ_PROBLEMS_MAP[lower]) {
     return RU_TO_UZ_PROBLEMS_MAP[lower];
+  }
+
+  // 1.1 Распознавание подпричин "Без маркировки"
+  if (lower.startsWith('без маркировки:')) {
+    const sub = lower.replace(/^без маркировки:\s*/, '').trim();
+    if (sub.includes('asl')) return 'Маркировкасиз: Asl Belgisi';
+    if (sub.includes('2 част')) return 'Маркировкасиз: Товар 2 қисмдан иборат';
+    if (sub.includes('комплект')) return 'Маркировкасиз: Тўплам ҳолида сотилади';
+    if (sub.includes('хрупк')) return 'Маркировкасиз: Эҳтиёт бўлинг, синувчан';
   }
 
   // 2. Умное распознавание по ключевым словам для складских формулировок
@@ -522,6 +560,7 @@ function setLanguage(lang) {
 
   // Обновление кнопок причин проблем и истории
   renderProblemsGrid();
+  renderInboundProblemsGrid();
   renderHistoryList();
   renderInboundHistoryList();
 }
@@ -633,7 +672,11 @@ function cacheElements() {
     confirmInboundExpiry: document.getElementById('confirmInboundExpiry'),
     confirmInboundProblem: document.getElementById('confirmInboundProblem'),
     cancelInboundConfirmBtn: document.getElementById('cancelInboundConfirmBtn'),
-    submitInboundConfirmBtn: document.getElementById('submitInboundConfirmBtn')
+    submitInboundConfirmBtn: document.getElementById('submitInboundConfirmBtn'),
+
+    // No Marking Modal
+    noMarkingModal: document.getElementById('noMarkingModal'),
+    cancelNoMarkingBtn: document.getElementById('cancelNoMarkingBtn')
   };
 }
 
@@ -1569,29 +1612,94 @@ function renderInboundProblemsGrid() {
     btn.className = 'problem-card-btn';
     btn.setAttribute('data-problem-ru', prob.ru);
 
-    if (state.selectedInboundProblem && state.selectedInboundProblem.ru === prob.ru) {
+    const isNoMarking = prob.ru === 'Без маркировки';
+    const isSelected = state.selectedInboundProblem && (
+      state.selectedInboundProblem.ru === prob.ru ||
+      (isNoMarking && (state.selectedInboundProblem.baseRu === 'Без маркировки' || state.selectedInboundProblem.ru.startsWith('Без маркировки:')))
+    );
+
+    if (isSelected) {
       btn.classList.add('selected');
     }
 
     const displayName = (state.currentLang === 'uz' && prob.uz) ? prob.uz : prob.ru;
 
+    let subTagHtml = '';
+    if (isNoMarking && isSelected) {
+      const subText = (state.currentLang === 'uz')
+        ? (state.selectedInboundProblem.subReasonUz || state.selectedInboundProblem.uz.replace(/^Маркировкасиз:\s*/, ''))
+        : (state.selectedInboundProblem.subReasonRu || state.selectedInboundProblem.ru.replace(/^Без маркировки:\s*/, ''));
+      if (subText) {
+        subTagHtml = `<span class="problem-sub-badge">↳ ${subText}</span>`;
+      }
+    }
+
     btn.innerHTML = `
       <span class="problem-icon">${prob.icon || getProblemIcon(prob.ru)}</span>
       <span class="problem-title">${displayName}</span>
+      ${subTagHtml}
     `;
 
     btn.addEventListener('click', () => {
-      selectInboundProblem(prob, btn);
+      if (isNoMarking) {
+        openNoMarkingModal(prob, btn);
+      } else {
+        selectInboundProblem(prob, btn);
+      }
     });
 
     elements.inboundProblemsGrid.appendChild(btn);
   });
 }
 
+function openNoMarkingModal(baseProb, btnElement) {
+  if (!elements.noMarkingModal) return;
+
+  const currentSubRu = state.selectedInboundProblem?.subReasonRu || '';
+  document.querySelectorAll('.no-marking-opt-btn').forEach(optBtn => {
+    const subRu = optBtn.getAttribute('data-sub-ru');
+    if (currentSubRu && subRu === currentSubRu) {
+      optBtn.classList.add('selected');
+    } else {
+      optBtn.classList.remove('selected');
+    }
+  });
+
+  elements.noMarkingModal.classList.add('active');
+  playSound('click');
+}
+
+function closeNoMarkingModal() {
+  if (elements.noMarkingModal) {
+    elements.noMarkingModal.classList.remove('active');
+  }
+}
+
+function selectNoMarkingSubOption(subRu, subUz, icon) {
+  const compositeProb = {
+    ru: `Без маркировки: ${subRu}`,
+    uz: `Маркировкасиз: ${subUz}`,
+    icon: icon || '🏷️',
+    baseRu: 'Без маркировки',
+    subReasonRu: subRu,
+    subReasonUz: subUz
+  };
+
+  state.selectedInboundProblem = compositeProb;
+  renderInboundProblemsGrid();
+  closeNoMarkingModal();
+
+  const err = document.getElementById('inboundProblemError');
+  if (err) {
+    err.textContent = '';
+    err.classList.remove('visible');
+  }
+  playSound('click');
+}
+
 function selectInboundProblem(prob, btnElement) {
   state.selectedInboundProblem = prob;
-  document.querySelectorAll('#inboundProblemsGrid .problem-card-btn').forEach(b => b.classList.remove('selected'));
-  if (btnElement) btnElement.classList.add('selected');
+  renderInboundProblemsGrid();
 
   const err = document.getElementById('inboundProblemError');
   if (err) {
@@ -1806,7 +1914,7 @@ function resetInboundItemForm(keepBox = true) {
   }
   setInboundNoExpiry(false);
   state.selectedInboundProblem = null;
-  document.querySelectorAll('#inboundProblemsGrid .problem-card-btn').forEach(b => b.classList.remove('selected'));
+  renderInboundProblemsGrid();
   clearInboundErrors();
 
   if (elements.inboundBarcode) {
@@ -2223,6 +2331,28 @@ function setupInboundListeners() {
       }
     });
   }
+
+  // Модалка "Без маркировки" (проваливание)
+  if (elements.cancelNoMarkingBtn) {
+    elements.cancelNoMarkingBtn.addEventListener('click', closeNoMarkingModal);
+  }
+
+  if (elements.noMarkingModal) {
+    elements.noMarkingModal.addEventListener('click', (e) => {
+      if (e.target === elements.noMarkingModal) {
+        closeNoMarkingModal();
+      }
+    });
+  }
+
+  document.querySelectorAll('.no-marking-opt-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const subRu = btn.getAttribute('data-sub-ru');
+      const subUz = btn.getAttribute('data-sub-uz');
+      const icon = btn.getAttribute('data-icon');
+      selectNoMarkingSubOption(subRu, subUz, icon);
+    });
+  });
 }
 
 // ═══════════════════════════════════════════
@@ -2311,7 +2441,16 @@ function setupEventListeners() {
 
   // Глобальный перехват ввода со сканера UROVO-R70 (режим клавиатуры)
   document.addEventListener('keydown', (e) => {
-    // 0. Если открыта модалка подтверждения входящего потока
+    // 0. Модалка выбора подпричины "Без маркировки"
+    if (elements.noMarkingModal && elements.noMarkingModal.classList.contains('active')) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeNoMarkingModal();
+        return;
+      }
+    }
+
+    // 0.1 Если открыта модалка подтверждения входящего потока
     if (elements.inboundConfirmModal && elements.inboundConfirmModal.classList.contains('active')) {
       if (e.key === 'Escape') {
         e.preventDefault();
