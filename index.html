@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="style.css?v=2.2.0">
+  <link rel="stylesheet" href="style.css?v=2.3.0">
 </head>
 <body>
 
@@ -556,6 +556,47 @@
     </div>
   </div>
 
+  <!-- МОДАЛЬНОЕ ОКНО: УТОЧНЕНИЕ ПРИЧИНЫ "СРОКИ ГОДНОСТИ" -->
+  <div id="expiryModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="expiryModalTitle">
+    <div class="modal-card no-marking-card">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+        <span style="font-size: 24px;">⏳</span>
+        <h3 id="expiryModalTitle" data-i18n="expiryModalTitle" style="margin: 0;">Сроки годности</h3>
+      </div>
+      <p id="expiryModalDesc" data-i18n="expiryModalDesc" style="margin-bottom: 16px;">Выберите подкатегорию срока годности:</p>
+
+      <div class="no-marking-grid">
+        <button type="button" class="expiry-opt-btn no-marking-opt-btn" data-sub-ru="Неверно указан в таблице" data-sub-uz="Жадвалда нотўғри кўрсатилган" data-icon="📋">
+          <span class="no-marking-opt-icon">📋</span>
+          <span class="no-marking-opt-title" data-i18n="subOptExpWrong">Неверно указан в таблице</span>
+          <span class="no-marking-opt-sub" data-i18n="subOptExpWrongDesc">Не совпадает с датой в таблице</span>
+        </button>
+
+        <button type="button" class="expiry-opt-btn no-marking-opt-btn" data-sub-ru="Истек срок годности" data-sub-uz="Яроқлилик муддати ўтган" data-icon="⏳">
+          <span class="no-marking-opt-icon">⏳</span>
+          <span class="no-marking-opt-title" data-i18n="subOptExpExpired">Истек срок годности</span>
+          <span class="no-marking-opt-sub" data-i18n="subOptExpExpiredDesc">Просроченный товар</span>
+        </button>
+
+        <button type="button" class="expiry-opt-btn no-marking-opt-btn" data-sub-ru="Без срока годности" data-sub-uz="Яроқлилик муддати йўқ" data-icon="🚫">
+          <span class="no-marking-opt-icon">🚫</span>
+          <span class="no-marking-opt-title" data-i18n="subOptExpNone">Без срока годности</span>
+          <span class="no-marking-opt-sub" data-i18n="subOptExpNoneDesc">Срок годности отсутствует</span>
+        </button>
+
+        <button type="button" class="expiry-opt-btn no-marking-opt-btn" data-sub-ru="Нет фиксации" data-sub-uz="Қайд этилмаган" data-icon="📝">
+          <span class="no-marking-opt-icon">📝</span>
+          <span class="no-marking-opt-title" data-i18n="subOptExpNoFix">Нет фиксации</span>
+          <span class="no-marking-opt-sub" data-i18n="subOptExpNoFixDesc">Срок не зафиксирован</span>
+        </button>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 18px;">
+        <button type="button" id="cancelExpiryBtn" class="btn btn-secondary" style="width: 100%;" data-i18n="cancel">Отмена</button>
+      </div>
+    </div>
+  </div>
+
   <!-- МОДАЛЬНОЕ ОКНО: НАСТРОЙКИ СЕРВЕРА APPS SCRIPT -->
   <div id="settingsModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
     <div class="modal-card">
@@ -581,6 +622,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=2.2.0"></script>
+  <script src="app.js?v=2.3.0"></script>
 </body>
 </html>

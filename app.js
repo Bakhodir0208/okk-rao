@@ -46,17 +46,15 @@ const PROBLEMS_CATALOG = [
   { ru: 'Грязная упаковка', uz: 'Ифлосланган қадоқ', icon: '🧼' }
 ];
 
-// Каталог из 15 причин проблем для Входящего потока
+// Каталог из 13 причин проблем для Входящего потока
 const DEFAULT_INBOUND_PROBLEMS = [
-  { ru: 'Без упаковки', uz: 'Қадоқсиз', icon: '📦' },
   { ru: 'Порвана упаковка (коробка)', uz: 'Қути қадоғи йиртилган', icon: '📦' },
   { ru: 'Порвана мягкая упаковка (пакет)', uz: 'Юмшоқ қадоқ йиртилган (пакет)', icon: '🛍️' },
   { ru: 'Упакован с нарушением оферты', uz: 'Оферта қоидаси бузилган', icon: '📜' },
   { ru: 'Без маркировки', uz: 'Маркировкасиз', icon: '🏷️' },
   { ru: 'Без описания товара', uz: 'Маҳсулот тавсифи йўқ', icon: '📝' },
   { ru: 'Неверное количество', uz: 'Нотўғри миқдор', icon: '🔢' },
-  { ru: 'Срок годности указан неверно', uz: 'Яроқлилик муддати нотўғри кўрсатилган', icon: '📅' },
-  { ru: 'Без срока годности', uz: 'Яроқлилик муддати йўқ', icon: '⏳' },
+  { ru: 'Сроки годности', uz: 'Яроқлилик муддати', icon: '⏳' },
   { ru: 'Товар сломан, деформирован', uz: 'Маҳсулот синган, деформацияланган', icon: '🔨' },
   { ru: 'Нет товарного вида', uz: 'Товарлик кўриниши йўқ', icon: '✨' },
   { ru: 'Запрещённый товар', uz: 'Тақиқланган маҳсулот', icon: '⛔' },
@@ -78,7 +76,15 @@ const SUB_PROBLEMS_MAP = {
   'без маркировки: товар из 2 частей': 'Маркировкасиз: Товар 2 қисмдан иборат',
   'без маркировки: продаётся комплектом': 'Маркировкасиз: Тўплам ҳолида сотилади',
   'без маркировки: продается комплектом': 'Маркировкасиз: Тўплам ҳолида сотилади',
-  'без маркировки: осторожно хрупкое': 'Маркировкасиз: Эҳтиёт бўлинг, синувчан'
+  'без маркировки: осторожно хрупкое': 'Маркировкасиз: Эҳтиёт бўлинг, синувчан',
+  'сроки годности: неверно указан в таблице': 'Яроқлилик муддати: Жадвалда нотўғри кўрсатилган',
+  'сроки годности: истек срок годности': 'Яроқлилик муддати: Яроқлилик муддати ўтган',
+  'сроки годности: без срока годности': 'Яроқлилик муддати: Яроқлилик муддати йўқ',
+  'сроки годности: нет фиксации': 'Яроқлилик муддати: Қайд этилмаган',
+  'срок годности: неверно указан в таблице': 'Яроқлилик муддати: Жадвалда нотўғри кўрсатилган',
+  'срок годности: истек срок годности': 'Яроқлилик муддати: Яроқлилик муддати ўтган',
+  'срок годности: без срока годности': 'Яроқлилик муддати: Яроқлилик муддати йўқ',
+  'срок годности: нет фиксации': 'Яроқлилик муддати: Қайд этилмаган'
 };
 Object.assign(RU_TO_UZ_PROBLEMS_MAP, SUB_PROBLEMS_MAP);
 
@@ -173,7 +179,17 @@ const I18N = {
     subOptBundle: 'Продаётся комплектом',
     subOptBundleDesc: 'Комплектный товар',
     subOptFragile: 'Осторожно хрупкое',
-    subOptFragileDesc: 'Хрупкое изделие'
+    subOptFragileDesc: 'Хрупкое изделие',
+    expiryModalTitle: 'Сроки годности',
+    expiryModalDesc: 'Выберите подкатегорию срока годности:',
+    subOptExpWrong: 'Неверно указан в таблице',
+    subOptExpWrongDesc: 'Не совпадает с датой в таблице',
+    subOptExpExpired: 'Истек срок годности',
+    subOptExpExpiredDesc: 'Просроченный товар',
+    subOptExpNone: 'Без срока годности',
+    subOptExpNoneDesc: 'Срок годности отсутствует',
+    subOptExpNoFix: 'Нет фиксации',
+    subOptExpNoFixDesc: 'Срок не зафиксирован'
   },
   uz: {
     brandBadge: 'ОКК • Сифат назорати • РАО',
@@ -264,7 +280,17 @@ const I18N = {
     subOptBundle: 'Тўплам ҳолида сотилади',
     subOptBundleDesc: 'Бир нечта дона тўплами',
     subOptFragile: 'Эҳтиёт бўлинг, синувчан',
-    subOptFragileDesc: 'Синувчан, эҳтиёткорлик талаб этилади'
+    subOptFragileDesc: 'Синувчан, эҳтиёткорлик талаб этилади',
+    expiryModalTitle: 'Яроқлилик муддати',
+    expiryModalDesc: 'Яроқлилик муддати турини танланг:',
+    subOptExpWrong: 'Жадвалда нотўғри кўрсатилган',
+    subOptExpWrongDesc: 'Жадвалдаги сана билан мос келмайди',
+    subOptExpExpired: 'Яроқлилик муддати ўтган',
+    subOptExpExpiredDesc: 'Муддати ўтган маҳсулот',
+    subOptExpNone: 'Яроқлилик муддати йўқ',
+    subOptExpNoneDesc: 'Яроқлилик муддати кўрсатилмаган',
+    subOptExpNoFix: 'Қайд этилмаган',
+    subOptExpNoFixDesc: 'Муддат қайд этилмаган'
   }
 };
 
@@ -338,6 +364,14 @@ function getClientTranslation(ruName) {
     if (sub.includes('2 част')) return 'Маркировкасиз: Товар 2 қисмдан иборат';
     if (sub.includes('комплект')) return 'Маркировкасиз: Тўплам ҳолида сотилади';
     if (sub.includes('хрупк')) return 'Маркировкасиз: Эҳтиёт бўлинг, синувчан';
+  }
+
+  // 1.2 Распознавание подпричин "Сроки годности"
+  if (lower.startsWith('сроки годности:') || lower.startsWith('срок годности:')) {
+    if (lower.includes('таблиц') || lower.includes('неверно')) return 'Яроқлилик муддати: Жадвалда нотўғри кўрсатилган';
+    if (lower.includes('истек') || lower.includes('ўтган')) return 'Яроқлилик муддати: Яроқлилик муддати ўтган';
+    if (lower.includes('без срока') || lower.includes('йўқ')) return 'Яроқлилик муддати: Яроқлилик муддати йўқ';
+    if (lower.includes('фиксаци') || lower.includes('қайд')) return 'Яроқлилик муддати: Қайд этилмаган';
   }
 
   // 2. Умное распознавание по ключевым словам для складских формулировок
@@ -676,7 +710,11 @@ function cacheElements() {
 
     // No Marking Modal
     noMarkingModal: document.getElementById('noMarkingModal'),
-    cancelNoMarkingBtn: document.getElementById('cancelNoMarkingBtn')
+    cancelNoMarkingBtn: document.getElementById('cancelNoMarkingBtn'),
+
+    // Expiry Modal
+    expiryModal: document.getElementById('expiryModal'),
+    cancelExpiryBtn: document.getElementById('cancelExpiryBtn')
   };
 }
 
@@ -1602,6 +1640,17 @@ function renderInboundHistoryList() {
 // ═══════════════════════════════════════════
 //  ВХОДЯЩИЙ ПОТОК: ОТРИСОВКА И ВЫБОР ПРИЧИН
 // ═══════════════════════════════════════════
+function isNoMarkingReason(probRu) {
+  if (!probRu) return false;
+  return probRu.trim() === 'Без маркировки';
+}
+
+function isExpiryReason(probRu) {
+  if (!probRu) return false;
+  const lower = probRu.toLowerCase().trim();
+  return lower === 'сроки годности' || lower === 'срок годности';
+}
+
 function renderInboundProblemsGrid() {
   if (!elements.inboundProblemsGrid) return;
   elements.inboundProblemsGrid.innerHTML = '';
@@ -1612,10 +1661,13 @@ function renderInboundProblemsGrid() {
     btn.className = 'problem-card-btn';
     btn.setAttribute('data-problem-ru', prob.ru);
 
-    const isNoMarking = prob.ru === 'Без маркировки';
+    const isNoMarking = isNoMarkingReason(prob.ru);
+    const isExpiry = isExpiryReason(prob.ru);
+
     const isSelected = state.selectedInboundProblem && (
       state.selectedInboundProblem.ru === prob.ru ||
-      (isNoMarking && (state.selectedInboundProblem.baseRu === 'Без маркировки' || state.selectedInboundProblem.ru.startsWith('Без маркировки:')))
+      (isNoMarking && (state.selectedInboundProblem.baseRu === 'Без маркировки' || state.selectedInboundProblem.ru.startsWith('Без маркировки:'))) ||
+      (isExpiry && (state.selectedInboundProblem.baseRu === 'Сроки годности' || state.selectedInboundProblem.baseRu === 'Срок годности' || state.selectedInboundProblem.ru.startsWith('Сроки годности:') || state.selectedInboundProblem.ru.startsWith('Срок годности:')))
     );
 
     if (isSelected) {
@@ -1632,6 +1684,13 @@ function renderInboundProblemsGrid() {
       if (subText) {
         subTagHtml = `<span class="problem-sub-badge">↳ ${subText}</span>`;
       }
+    } else if (isExpiry && isSelected) {
+      const subText = (state.currentLang === 'uz')
+        ? (state.selectedInboundProblem.subReasonUz || state.selectedInboundProblem.uz.replace(/^Яроқлилик муддати:\s*/, ''))
+        : (state.selectedInboundProblem.subReasonRu || state.selectedInboundProblem.ru.replace(/^Сроки годности:\s*|^Срок годности:\s*/, ''));
+      if (subText) {
+        subTagHtml = `<span class="problem-sub-badge">↳ ${subText}</span>`;
+      }
     }
 
     btn.innerHTML = `
@@ -1643,6 +1702,8 @@ function renderInboundProblemsGrid() {
     btn.addEventListener('click', () => {
       if (isNoMarking) {
         openNoMarkingModal(prob, btn);
+      } else if (isExpiry) {
+        openExpiryModal(prob, btn);
       } else {
         selectInboundProblem(prob, btn);
       }
@@ -1656,7 +1717,7 @@ function openNoMarkingModal(baseProb, btnElement) {
   if (!elements.noMarkingModal) return;
 
   const currentSubRu = state.selectedInboundProblem?.subReasonRu || '';
-  document.querySelectorAll('.no-marking-opt-btn').forEach(optBtn => {
+  document.querySelectorAll('#noMarkingModal .no-marking-opt-btn').forEach(optBtn => {
     const subRu = optBtn.getAttribute('data-sub-ru');
     if (currentSubRu && subRu === currentSubRu) {
       optBtn.classList.add('selected');
@@ -1694,6 +1755,62 @@ function selectNoMarkingSubOption(subRu, subUz, icon) {
     err.textContent = '';
     err.classList.remove('visible');
   }
+  playSound('click');
+}
+
+function openExpiryModal(baseProb, btnElement) {
+  if (!elements.expiryModal) return;
+
+  const currentSubRu = state.selectedInboundProblem?.subReasonRu || '';
+  document.querySelectorAll('.expiry-opt-btn').forEach(optBtn => {
+    const subRu = optBtn.getAttribute('data-sub-ru');
+    if (currentSubRu && subRu === currentSubRu) {
+      optBtn.classList.add('selected');
+    } else {
+      optBtn.classList.remove('selected');
+    }
+  });
+
+  elements.expiryModal.classList.add('active');
+  playSound('click');
+}
+
+function closeExpiryModal() {
+  if (elements.expiryModal) {
+    elements.expiryModal.classList.remove('active');
+  }
+}
+
+function selectExpirySubOption(subRu, subUz, icon) {
+  const baseName = 'Сроки годности';
+  const baseNameUz = 'Яроқлилик муддати';
+
+  const compositeProb = {
+    ru: `${baseName}: ${subRu}`,
+    uz: `${baseNameUz}: ${subUz}`,
+    icon: icon || '⏳',
+    baseRu: baseName,
+    subReasonRu: subRu,
+    subReasonUz: subUz
+  };
+
+  state.selectedInboundProblem = compositeProb;
+  renderInboundProblemsGrid();
+  closeExpiryModal();
+
+  const err = document.getElementById('inboundProblemError');
+  if (err) {
+    err.textContent = '';
+    err.classList.remove('visible');
+  }
+
+  // Если выбрана подпричина "Без срока годности", автоматически активируем режим "Без срока годности"
+  if (subRu === 'Без срока годности') {
+    setInboundNoExpiry(true);
+  } else if (state.inboundNoExpiry) {
+    setInboundNoExpiry(false);
+  }
+
   playSound('click');
 }
 
@@ -1854,7 +1971,12 @@ function handleInboundSubmit() {
 
   // 4. Валидация срока годности (кроме "Без срока годности" или если включен state.inboundNoExpiry)
   let formattedExpiry = '';
-  if (state.inboundNoExpiry || prob.ru === 'Без срока годности') {
+  const isNoExpiryCase = state.inboundNoExpiry ||
+    prob.ru === 'Без срока годности' ||
+    prob.subReasonRu === 'Без срока годности' ||
+    prob.ru.endsWith('Без срока годности');
+
+  if (isNoExpiryCase) {
     formattedExpiry = (expiryDate && !state.inboundNoExpiry) ? parseAndFormatDisplayDate(expiryDate) : 'Без срока годности';
   } else {
     if (!expiryDate) {
@@ -2345,12 +2467,34 @@ function setupInboundListeners() {
     });
   }
 
-  document.querySelectorAll('.no-marking-opt-btn').forEach(btn => {
+  document.querySelectorAll('#noMarkingModal .no-marking-opt-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const subRu = btn.getAttribute('data-sub-ru');
       const subUz = btn.getAttribute('data-sub-uz');
       const icon = btn.getAttribute('data-icon');
       selectNoMarkingSubOption(subRu, subUz, icon);
+    });
+  });
+
+  // Модалка "Сроки годности" (проваливание)
+  if (elements.cancelExpiryBtn) {
+    elements.cancelExpiryBtn.addEventListener('click', closeExpiryModal);
+  }
+
+  if (elements.expiryModal) {
+    elements.expiryModal.addEventListener('click', (e) => {
+      if (e.target === elements.expiryModal) {
+        closeExpiryModal();
+      }
+    });
+  }
+
+  document.querySelectorAll('.expiry-opt-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const subRu = btn.getAttribute('data-sub-ru');
+      const subUz = btn.getAttribute('data-sub-uz');
+      const icon = btn.getAttribute('data-icon');
+      selectExpirySubOption(subRu, subUz, icon);
     });
   });
 }
@@ -2446,6 +2590,15 @@ function setupEventListeners() {
       if (e.key === 'Escape') {
         e.preventDefault();
         closeNoMarkingModal();
+        return;
+      }
+    }
+
+    // 0.0 Модалка выбора подпричины "Сроки годности"
+    if (elements.expiryModal && elements.expiryModal.classList.contains('active')) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeExpiryModal();
         return;
       }
     }
