@@ -1954,9 +1954,9 @@ function fetchInboundBarcodeExpiry(barcode) {
     .catch(err => {
       console.warn('Barcode expiry lookup error:', err);
       if (elements.inboundBarcode && elements.inboundBarcode.value.trim() === barcode) {
-        const fallbackNotFound = { success: true, found: false };
-        lastExpiryLookupData = fallbackNotFound;
-        renderInboundExpiryStatus(fallbackNotFound);
+        const fallbackError = { success: false, message: 'Сетевая ошибка или сервер временно недоступен' };
+        lastExpiryLookupData = fallbackError;
+        renderInboundExpiryStatus(fallbackError);
       }
     });
 }
@@ -1984,6 +1984,19 @@ function renderInboundExpiryStatus(data) {
           ${label} <span class="exp-highlight">${expDate}</span>
         </div>
         ${details ? `<div class="exp-detail">${details}</div>` : ''}
+      </div>
+    `;
+    el.style.display = 'flex';
+  } else if (data && data.success === false) {
+    const title = isUz ? 'Текширишда хатолик' : 'Ошибка проверки приёмки';
+    const desc = data.message || (isUz ? 'Жадвалга уланишда хатолик' : 'Не удалось получить данные из таблицы приёмки');
+
+    el.className = 'inbound-expiry-status not-found';
+    el.innerHTML = `
+      <span class="exp-icon">⚠️</span>
+      <div class="exp-content">
+        <div class="exp-title">${title}</div>
+        <div class="exp-detail">${desc}</div>
       </div>
     `;
     el.style.display = 'flex';

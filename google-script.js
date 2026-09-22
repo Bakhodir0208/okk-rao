@@ -677,7 +677,7 @@ function isRecentInboundDuplicate(sheet, dateStr, employeeId, boxNumber, barcode
 // ═══════════════════════════════════════════
 //  ПРОВЕРКА ФИКСАЦИИ СРОКА ГОДНОСТИ ПО ШК В ТАБЛИЦЕ ПРИЁМКИ
 // ═══════════════════════════════════════════
-var DEFAULT_EXPIRY_INTAKE_SPREADSHEET_ID = "1SjFZM0_BOfeKlutSkszrPApNmq_gYOWdBIDU7oxAj-Y";
+var DEFAULT_EXPIRY_INTAKE_SPREADSHEET_ID = "1SJFZM0_BOfeKIutSKszrPApNmq_gY0WdBiDU7oxAj-Y";
 
 function checkBarcodeExpiry_(ss, barcode) {
   var cleanTargetBarcode = String(barcode || "").replace(/\D/g, "");
@@ -702,8 +702,11 @@ function checkBarcodeExpiry_(ss, barcode) {
       for (var c = 0; c < cData.length; c++) {
         var label = String(cData[c][1] || "").toLowerCase().trim();
         if (label.indexOf("таблица приёмки") !== -1 || label.indexOf("приёмка сроков") !== -1 || label.indexOf("таблица приёмка") !== -1) {
-          var customId = String(cData[c][2] || "").trim();
-          if (customId) intakeSsId = customId;
+          var customVal = String(cData[c][2] || "").trim();
+          if (customVal) {
+            var urlMatch = customVal.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+            intakeSsId = urlMatch ? urlMatch[1] : customVal;
+          }
           break;
         }
       }
