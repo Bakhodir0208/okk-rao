@@ -1562,3 +1562,81 @@ body {
   animation: fadeIn 0.25s ease-out;
 }
 
+/* ═══════════════════════════════════════════
+   ИНФОРМАЦИОННЫЙ БЛОК ПРОВЕРКИ СРОКА ГОДНОСТИ ПО ШК
+═══════════════════════════════════════════ */
+.inbound-expiry-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  line-height: 1.4;
+  margin-top: 8px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.inbound-expiry-status .exp-icon {
+  font-size: 18px;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.inbound-expiry-status .exp-content {
+  flex: 1;
+}
+
+.inbound-expiry-status .exp-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.inbound-expiry-status .exp-highlight {
+  font-weight: 800;
+  font-size: 14.5px;
+  letter-spacing: 0.5px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.inbound-expiry-status .exp-detail {
+  font-size: 11px;
+  opacity: 0.85;
+  margin-top: 3px;
+}
+
+.inbound-expiry-status.loading {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-secondary);
+}
+
+.inbound-expiry-status.found {
+  background: rgba(0, 230, 118, 0.1);
+  border: 1px solid rgba(0, 230, 118, 0.4);
+  color: #00e676;
+  box-shadow: 0 0 16px rgba(0, 230, 118, 0.15);
+}
+
+.inbound-expiry-status.found .exp-highlight {
+  color: #ffffff;
+}
+
+.inbound-expiry-status.not-found {
+  background: rgba(255, 171, 0, 0.1);
+  border: 1px solid rgba(255, 171, 0, 0.4);
+  color: #ffb300;
+}
+
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.exp-spinner {
+  display: inline-block;
+  animation: spinSlow 2s linear infinite;
+}
+
+

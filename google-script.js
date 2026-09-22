@@ -522,6 +522,11 @@ function handleRequest(e) {
         success: true,
         logs: userLogs
       };
+
+    // 7. ОНЛАЙН-ПРОВЕРКА СРОКА ГОДНОСТИ ПО ШК В ТАБЛИЦЕ ПРИЁМКИ
+    } else if (action === "checkBarcodeExpiry") {
+      var barcode = String(parameter.barcode || "").trim();
+      response = checkBarcodeExpiry_(ss, barcode);
     }
 
   } catch (err) {
@@ -667,6 +672,159 @@ function isRecentInboundDuplicate(sheet, dateStr, employeeId, boxNumber, barcode
     }
   }
   return false;
+}
+
+// ═══════════════════════════════════════════
+//  ПРОВЕРКА ФИКСАЦИИ СРОКА ГОДНОСТИ ПО ШК В ТАБЛИЦЕ ПРИЁМКИ
+// ═══════════════════════════════════════════
+var DEFAULT_EXPIRY_INTAKE_SPREADSHEET_ID = "1SjFZM0_BOfeKlutSkszrPApNmq_gYOWdBIDU7oxAj-Y";
+
+function checkBarcodeExpiry_(ss, barcode) {
+  var cleanTargetBarcode = String(barcode || "").replace(/\D/g, "");
+  if (!cleanTargetBarcode) {
+    return { success: false, found: false, message: "Штрих-код не указан" };
+  }
+
+  var cache = CacheService.getScriptCache();
+  var cacheKey = "exp_chk_" + cleanTargetBarcode;
+  try {
+    var cached = cache.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+  } catch (e) {}
+
+  var intakeSsId = DEFAULT_EXPIRY_INTAKE_SPREADSHEET_ID;
+  if (ss) {
+    var configSheet = ss.getSheetByName("Config");
+    if (configSheet) {
+      var cData = configSheet.getDataRange().getValues();
+      for (var c = 0; c < cData.length; c++) {
+        var label = String(cData[c][1] || "").toLowerCase().trim();
+        if (label.indexOf("таблица приёмки") !== -1 || label.indexOf("приёмка сроков") !== -1 || label.indexOf("таблица приёмка") !== -1) {
+          var customId = String(cData[c][2] || "").trim();
+          if (customId) intakeSsId = customId;
+          break;
+        }
+      }
+    }
+  }
+
+  try {
+    var intakeSs = SpreadsheetApp.openById(intakeSsId);
+    var intakeSheet = intakeSs.getSheetByName("Ответы на форму (1)") || intakeSs.getSheets()[0];
+    if (!intakeSheet) {
+      return { success: false, found: false, message: "Лист ответов формы не найден" };
+    }
+
+    var lastRow = intakeSheet.getLastRow();
+    if (lastRow <= 1) {
+      return { success: true, found: false, message: "Таблица приёмки пуста" };
+    }
+
+    var tz = Session.getScriptTimeZone() || "Asia/Tashkent";
+    var now = new Date();
+    var todayDateStr = Utilities.formatDate(now, tz, "yyyy-MM-dd");
+    var todayParts = todayDateStr.split("-");
+    var nowYear = parseInt(todayParts[0], 10);
+    var nowMonth = parseInt(todayParts[1], 10) - 1;
+    var nowDay = parseInt(todayParts[2], 10);
+
+    // Начало вчерашнего дня (00:00:00) в часовом поясе склада
+    var startOfYesterday = new Date(nowYear, nowMonth, nowDay - 1, 0, 0, 0, 0).getTime();
+
+    var maxRowsToRead = Math.min(3000, lastRow - 1);
+    var startRow = lastRow - maxRowsToRead + 1;
+    var data = intakeSheet.getRange(startRow, 1, maxRowsToRead, 4).getValues();
+
+    var result = { success: true, found: false };
+
+    for (var i = data.length - 1; i >= 0; i--) {
+      var rowTimeVal = data[i][0];
+      var rowMillis = parseTimestampToMillis_(rowTimeVal);
+
+      // Если время записи раньше начала вчерашнего дня, останавливаем поиск (строки отсортированы хронологически)
+      if (rowMillis && rowMillis < startOfYesterday) {
+        break;
+      }
+
+      var cellBarcodeStr = String(data[i][1] || "").trim();
+      if (!cellBarcodeStr) continue;
+
+      var isMatch = false;
+      if (cellBarcodeStr === cleanTargetBarcode) {
+        isMatch = true;
+      } else if (cellBarcodeStr.indexOf(cleanTargetBarcode) !== -1) {
+        var splitCodes = cellBarcodeStr.split(/[,;\s]+/);
+        for (var s = 0; s < splitCodes.length; s++) {
+          if (splitCodes[s].replace(/\D/g, "") === cleanTargetBarcode) {
+            isMatch = true;
+            break;
+          }
+        }
+      }
+
+      if (isMatch) {
+        var expVal = data[i][2];
+        var expStr = "";
+        if (expVal instanceof Date) {
+          expStr = Utilities.formatDate(expVal, tz, "dd.MM.yyyy");
+        } else {
+          expStr = String(expVal || "").trim();
+        }
+
+        var prodName = String(data[i][3] || "").trim();
+        var recordTimeStr = "";
+        if (rowTimeVal instanceof Date) {
+          recordTimeStr = Utilities.formatDate(rowTimeVal, tz, "dd.MM HH:mm");
+        } else {
+          recordTimeStr = String(rowTimeVal || "").substring(0, 16);
+        }
+
+        result = {
+          success: true,
+          found: true,
+          barcode: cleanTargetBarcode,
+          expiryDate: expStr,
+          productName: prodName,
+          recordTime: recordTimeStr
+        };
+        break;
+      }
+    }
+
+    try {
+      cache.put(cacheKey, JSON.stringify(result), 60);
+    } catch (e) {}
+
+    return result;
+  } catch (err) {
+    return {
+      success: false,
+      found: false,
+      message: "Ошибка доступа к таблице приёмки: " + err.toString()
+    };
+  }
+}
+
+function parseTimestampToMillis_(val) {
+  if (!val) return null;
+  if (val instanceof Date) return val.getTime();
+  if (typeof val === "string") {
+    var match = val.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+    if (match) {
+      var d = parseInt(match[1], 10);
+      var m = parseInt(match[2], 10) - 1;
+      var y = parseInt(match[3], 10);
+      var hh = match[4] ? parseInt(match[4], 10) : 0;
+      var mm = match[5] ? parseInt(match[5], 10) : 0;
+      var ss = match[6] ? parseInt(match[6], 10) : 0;
+      return new Date(y, m, d, hh, mm, ss).getTime();
+    }
+    var dObj = new Date(val);
+    if (!isNaN(dObj.getTime())) return dObj.getTime();
+  }
+  return null;
 }
 
 // Автоматическая проверка и настройка листов при первом вызове

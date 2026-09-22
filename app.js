@@ -597,6 +597,11 @@ function setLanguage(lang) {
   renderInboundProblemsGrid();
   renderHistoryList();
   renderInboundHistoryList();
+
+  // Обновление статуса проверки срока годности
+  if (lastExpiryLookupData && elements.inboundExpiryStatus && elements.inboundExpiryStatus.style.display !== 'none') {
+    renderInboundExpiryStatus(lastExpiryLookupData);
+  }
 }
 
 function cacheElements() {
@@ -673,6 +678,7 @@ function cacheElements() {
     inboundBarcode: document.getElementById('inboundBarcode'),
     clearInboundBarcode: document.getElementById('clearInboundBarcode'),
     inboundBarcodeError: document.getElementById('inboundBarcodeError'),
+    inboundExpiryStatus: document.getElementById('inboundExpiryStatus'),
     inboundExpiryDate: document.getElementById('inboundExpiryDate'),
     clearInboundExpiry: document.getElementById('clearInboundExpiry'),
     toggleNoExpiryBtn: document.getElementById('toggleNoExpiryBtn'),
@@ -1897,6 +1903,132 @@ function parseAndFormatDisplayDate(val) {
   return val;
 }
 
+// ═══════════════════════════════════════════
+//  ОНЛАЙН-ПРОВЕРКА СРОКА ГОДНОСТИ ПО ШК В ТАБЛИЦЕ ПРИЁМКИ
+// ═══════════════════════════════════════════
+let barcodeExpiryLookupTimeout = null;
+let lastLookedUpBarcode = null;
+let lastExpiryLookupData = null;
+
+function triggerInboundBarcodeExpiryLookup(barcode) {
+  if (!barcode || barcode.length !== 13) {
+    hideInboundExpiryStatus();
+    lastLookedUpBarcode = null;
+    lastExpiryLookupData = null;
+    return;
+  }
+
+  if (lastLookedUpBarcode === barcode && lastExpiryLookupData) {
+    renderInboundExpiryStatus(lastExpiryLookupData);
+    return;
+  }
+
+  if (barcodeExpiryLookupTimeout) {
+    clearTimeout(barcodeExpiryLookupTimeout);
+  }
+
+  showInboundExpiryLoading();
+
+  barcodeExpiryLookupTimeout = setTimeout(() => {
+    lastLookedUpBarcode = barcode;
+    fetchInboundBarcodeExpiry(barcode);
+  }, 180);
+}
+
+function fetchInboundBarcodeExpiry(barcode) {
+  if (!state.apiUrl) {
+    hideInboundExpiryStatus();
+    return;
+  }
+
+  const url = `${state.apiUrl}?action=checkBarcodeExpiry&barcode=${encodeURIComponent(barcode)}`;
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      if (elements.inboundBarcode && elements.inboundBarcode.value.trim() !== barcode) {
+        return;
+      }
+      lastExpiryLookupData = data;
+      renderInboundExpiryStatus(data);
+    })
+    .catch(err => {
+      console.warn('Barcode expiry lookup error:', err);
+      if (elements.inboundBarcode && elements.inboundBarcode.value.trim() === barcode) {
+        const fallbackNotFound = { success: true, found: false };
+        lastExpiryLookupData = fallbackNotFound;
+        renderInboundExpiryStatus(fallbackNotFound);
+      }
+    });
+}
+
+function renderInboundExpiryStatus(data) {
+  const el = elements.inboundExpiryStatus;
+  if (!el) return;
+
+  const isUz = state.currentLang === 'uz';
+
+  if (data && data.success && data.found) {
+    const label = isUz ? 'Қабул жадвалида муддат қайд этилган:' : 'В приёмке зафиксирован срок:';
+    const timePrefix = isUz ? 'Қайд вақти:' : 'Запись от';
+
+    const expDate = data.expiryDate || '—';
+    const prodName = data.productName ? data.productName : '';
+    const recTime = data.recordTime ? `${timePrefix} ${data.recordTime}` : '';
+    const details = [prodName, recTime].filter(Boolean).join(' • ');
+
+    el.className = 'inbound-expiry-status found';
+    el.innerHTML = `
+      <span class="exp-icon">📅</span>
+      <div class="exp-content">
+        <div class="exp-title">
+          ${label} <span class="exp-highlight">${expDate}</span>
+        </div>
+        ${details ? `<div class="exp-detail">${details}</div>` : ''}
+      </div>
+    `;
+    el.style.display = 'flex';
+  } else {
+    const title = isUz ? 'Муддат қайди топилмади' : 'Фиксация срока не найдена';
+    const desc = isUz ? 'Сўнгги 2 кун ичида (кеча ва бугун) ушбу ШК бўйича муддат қайд этилмаган' : 'В таблице приёмки нет записей за последние 2 дня (вчера и сегодня)';
+
+    el.className = 'inbound-expiry-status not-found';
+    el.innerHTML = `
+      <span class="exp-icon">⚠️</span>
+      <div class="exp-content">
+        <div class="exp-title">${title}</div>
+        <div class="exp-detail">${desc}</div>
+      </div>
+    `;
+    el.style.display = 'flex';
+  }
+}
+
+function showInboundExpiryLoading() {
+  const el = elements.inboundExpiryStatus;
+  if (!el) return;
+
+  const isUz = state.currentLang === 'uz';
+  const msg = isUz ? 'Қабул жадвалидан муддат текширилмоқда...' : 'Проверка фиксации срока в приёмке...';
+
+  el.className = 'inbound-expiry-status loading';
+  el.innerHTML = `
+    <span class="exp-icon exp-spinner">⏳</span>
+    <div class="exp-content">
+      <div class="exp-title">${msg}</div>
+    </div>
+  `;
+  el.style.display = 'flex';
+}
+
+function hideInboundExpiryStatus() {
+  if (elements.inboundExpiryStatus) {
+    elements.inboundExpiryStatus.style.display = 'none';
+    elements.inboundExpiryStatus.className = 'inbound-expiry-status';
+    elements.inboundExpiryStatus.innerHTML = '';
+  }
+}
+
+
 function clearInboundErrors() {
   const errorIds = [
     'inboundBoxError',
@@ -2038,6 +2170,9 @@ function resetInboundItemForm(keepBox = true) {
   state.selectedInboundProblem = null;
   renderInboundProblemsGrid();
   clearInboundErrors();
+  hideInboundExpiryStatus();
+  lastLookedUpBarcode = null;
+  lastExpiryLookupData = null;
 
   if (elements.inboundBarcode) {
     elements.inboundBarcode.focus();
@@ -2316,6 +2451,9 @@ function setupInboundListeners() {
       elements.inboundBarcode.classList.remove('input-valid', 'input-error');
       const err = document.getElementById('inboundBarcodeError');
       if (err) err.classList.remove('visible');
+      hideInboundExpiryStatus();
+      lastLookedUpBarcode = null;
+      lastExpiryLookupData = null;
       elements.inboundBarcode.focus();
     });
   }
@@ -2372,11 +2510,15 @@ function setupInboundListeners() {
       if (converted.length === 13) {
         elements.inboundBarcode.classList.remove('input-error');
         elements.inboundBarcode.classList.add('input-valid');
+        triggerInboundBarcodeExpiryLookup(converted);
       } else {
         elements.inboundBarcode.classList.remove('input-valid');
         if (converted.length > 13) {
           elements.inboundBarcode.classList.add('input-error');
         }
+        hideInboundExpiryStatus();
+        lastLookedUpBarcode = null;
+        lastExpiryLookupData = null;
       }
     });
 
@@ -2387,6 +2529,9 @@ function setupInboundListeners() {
         if (code.length !== 13 && (!state.selectedInboundProblem || state.selectedInboundProblem.ru !== 'Нет штрихкода или он не читается')) {
           showInboundError('inboundBarcodeError', elements.inboundBarcode, t('barcode13Err'));
         } else {
+          if (code.length === 13) {
+            triggerInboundBarcodeExpiryLookup(code);
+          }
           elements.inboundExpiryDate.focus();
         }
       }
