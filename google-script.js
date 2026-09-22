@@ -722,7 +722,7 @@ function checkBarcodeExpiry_(ss, barcode) {
       return { success: true, found: false, message: "Таблица приёмки пуста" };
     }
 
-    var tz = Session.getScriptTimeZone() || "Asia/Tashkent";
+    var tz = intakeSs.getSpreadsheetTimeZone() || Session.getScriptTimeZone() || "Asia/Tashkent";
     var now = new Date();
     var todayDateStr = Utilities.formatDate(now, tz, "yyyy-MM-dd");
     var todayParts = todayDateStr.split("-");
@@ -733,29 +733,56 @@ function checkBarcodeExpiry_(ss, barcode) {
     // Начало вчерашнего дня (00:00:00) в часовом поясе склада
     var startOfYesterday = new Date(nowYear, nowMonth, nowDay - 1, 0, 0, 0, 0).getTime();
 
-    var maxRowsToRead = Math.min(3000, lastRow - 1);
-    var startRow = lastRow - maxRowsToRead + 1;
-    var data = intakeSheet.getRange(startRow, 1, maxRowsToRead, 4).getValues();
+    // Загружаем данные: если таблица до 5000 строк - читаем всю.
+    // Если больше 5000 строк - определяем, где находятся самые свежие строки (вверху или внизу).
+    var startRow = 2;
+    var numRows = Math.min(lastRow - 1, 5000);
+    if (lastRow > 5000) {
+      var topVal = intakeSheet.getRange(2, 1, 1, 1).getValue();
+      var botVal = intakeSheet.getRange(lastRow, 1, 1, 1).getValue();
+      var topM = parseTimestampToMillis_(topVal);
+      var botM = parseTimestampToMillis_(botVal);
 
-    var result = { success: true, found: false };
+      // Если внизу строки свежее, чем вверху, читаем с конца
+      if (botM && (!topM || botM > topM)) {
+        startRow = lastRow - numRows + 1;
+      }
+    }
 
-    for (var i = data.length - 1; i >= 0; i--) {
+    var data = intakeSheet.getRange(startRow, 1, numRows, 4).getValues();
+
+    // Если таблица отсортирована сверху вниз, но форма добавила свежие ответы в самый низ,
+    // дополнительно подхватываем последние 200 строк
+    if (lastRow > 5000 && startRow === 2) {
+      try {
+        var tailCount = Math.min(200, lastRow - (startRow + numRows - 1));
+        if (tailCount > 0) {
+          var tailData = intakeSheet.getRange(lastRow - tailCount + 1, 1, tailCount, 4).getValues();
+          data = data.concat(tailData);
+        }
+      } catch (eTail) {}
+    }
+
+    var bestMatch = null;
+
+    for (var i = 0; i < data.length; i++) {
       var rowTimeVal = data[i][0];
       var rowMillis = parseTimestampToMillis_(rowTimeVal);
 
-      // Если время записи раньше начала вчерашнего дня, останавливаем поиск (строки отсортированы хронологически)
-      if (rowMillis && rowMillis < startOfYesterday) {
-        break;
+      // Пропускаем записи старше вчерашнего дня (не используем break, чтобы не зависеть от порядка сортировки!)
+      if (!rowMillis || rowMillis < startOfYesterday) {
+        continue;
       }
 
-      var cellBarcodeStr = String(data[i][1] || "").trim();
-      if (!cellBarcodeStr) continue;
+      var cellBarcodeRaw = String(data[i][1] || "").trim();
+      if (!cellBarcodeRaw) continue;
 
       var isMatch = false;
-      if (cellBarcodeStr === cleanTargetBarcode) {
+      var cellBarcodeClean = cellBarcodeRaw.replace(/\D/g, "");
+      if (cellBarcodeClean === cleanTargetBarcode) {
         isMatch = true;
-      } else if (cellBarcodeStr.indexOf(cleanTargetBarcode) !== -1) {
-        var splitCodes = cellBarcodeStr.split(/[,;\s]+/);
+      } else if (cellBarcodeRaw.indexOf(cleanTargetBarcode) !== -1) {
+        var splitCodes = cellBarcodeRaw.split(/[,;\s]+/);
         for (var s = 0; s < splitCodes.length; s++) {
           if (splitCodes[s].replace(/\D/g, "") === cleanTargetBarcode) {
             isMatch = true;
@@ -765,37 +792,51 @@ function checkBarcodeExpiry_(ss, barcode) {
       }
 
       if (isMatch) {
-        var expVal = data[i][2];
-        var expStr = "";
-        if (expVal instanceof Date) {
-          expStr = Utilities.formatDate(expVal, tz, "dd.MM.yyyy");
-        } else {
-          expStr = String(expVal || "").trim();
-        }
+        // Если найдено несколько записей, выбираем самую свежую по времени
+        if (!bestMatch || rowMillis > bestMatch.rowMillis) {
+          var expVal = data[i][2];
+          var expStr = "";
+          if (expVal instanceof Date) {
+            expStr = Utilities.formatDate(expVal, tz, "dd.MM.yyyy");
+          } else {
+            expStr = String(expVal || "").trim();
+          }
 
-        var prodName = String(data[i][3] || "").trim();
-        var recordTimeStr = "";
-        if (rowTimeVal instanceof Date) {
-          recordTimeStr = Utilities.formatDate(rowTimeVal, tz, "dd.MM HH:mm");
-        } else {
-          recordTimeStr = String(rowTimeVal || "").substring(0, 16);
-        }
+          var prodName = String(data[i][3] || "").trim();
+          var recordTimeStr = "";
+          if (rowTimeVal instanceof Date) {
+            recordTimeStr = Utilities.formatDate(rowTimeVal, tz, "dd.MM HH:mm");
+          } else {
+            recordTimeStr = String(rowTimeVal || "").substring(0, 16);
+          }
 
-        result = {
-          success: true,
-          found: true,
-          barcode: cleanTargetBarcode,
-          expiryDate: expStr,
-          productName: prodName,
-          recordTime: recordTimeStr
-        };
-        break;
+          bestMatch = {
+            rowMillis: rowMillis,
+            success: true,
+            found: true,
+            barcode: cleanTargetBarcode,
+            expiryDate: expStr,
+            productName: prodName,
+            recordTime: recordTimeStr
+          };
+        }
       }
     }
 
-    try {
-      cache.put(cacheKey, JSON.stringify(result), 60);
-    } catch (e) {}
+    var result;
+    if (bestMatch) {
+      result = bestMatch;
+      // Кэшируем только найденный результат на 30 секунд
+      try {
+        cache.put(cacheKey, JSON.stringify(result), 30);
+      } catch (e) {}
+    } else {
+      result = {
+        success: true,
+        found: false,
+        message: "В таблице приёмки нет записей за последние 2 дня"
+      };
+    }
 
     return result;
   } catch (err) {
@@ -810,6 +851,9 @@ function checkBarcodeExpiry_(ss, barcode) {
 function parseTimestampToMillis_(val) {
   if (!val) return null;
   if (val instanceof Date) return val.getTime();
+  if (typeof val === "number" && val > 30000) {
+    return new Date((val - 25569) * 86400 * 1000).getTime();
+  }
   if (typeof val === "string") {
     var match = val.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
     if (match) {
