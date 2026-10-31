@@ -17,7 +17,9 @@ const STORAGE_KEYS = {
   VERIFIED_EMPLOYEES: 'okk_rao_verified_employees',
   CURRENT_PROCESS: 'okk_rao_current_process',
   INBOUND_HISTORY: 'okk_rao_inbound_history',
-  INBOUND_OFFLINE_QUEUE: 'okk_rao_inbound_offline_queue'
+  INBOUND_OFFLINE_QUEUE: 'okk_rao_inbound_offline_queue',
+  SORTING_SUB_MODE: 'okk_rao_sorting_sub_mode',
+  SORTING_WALL: 'okk_rao_sorting_wall'
 };
 
 // Каталог причин проблем для Отгрузки (Log)
@@ -144,8 +146,21 @@ const I18N = {
     processSelectHeading: 'Выберите рабочий процесс',
     processSelectSub: 'Выберите направление для фиксации позиций',
     shippingProcessBadge: 'Текущий процесс',
-    shippingProcessTitle: '1. Отгрузка',
-    shippingProcessDesc: 'Стена сортировки, фиксация брака и поврежденных товаров',
+    shippingProcessTitle: '1. Зона сортировки',
+    shippingProcessDesc: 'Сортировка, потоварка, отгрузка, фиксация брака',
+    shippingHeaderBadge: 'Зона сортировки',
+    subModeLabel: 'Режим зоны сортировки:',
+    subModeSorting: 'Сортировка',
+    subModeItemized: 'Потоварка',
+    subModeShipping: 'Отгрузка',
+    subModeRequired: 'Выберите режим',
+    subModeSelected: 'Выбрано',
+    subModeNotice: 'Сначала выберите один из режимов',
+    selectSubModeFirst: 'Пожалуйста, сначала выберите режим: Сортировка, Потоварка или Отгрузка!',
+    scanWallFirst: 'Для режима «Потоварка» отсканируйте номер стены сортировки!',
+    workWallLabel: 'Номер стены сортировки',
+    workWallPlaceholder: 'Отсканируйте номер стены сортировки...',
+    confirmSubMode: '🎯 Зона / Режим:',
     inboundProcessBadge: 'Новый процесс',
     inboundProcessTitle: '2. Входящий поток',
     inboundProcessDesc: 'Акты пересчета, сроки годности и фиксация ОТД',
@@ -246,8 +261,21 @@ const I18N = {
     processSelectHeading: 'Иш жараёнини танланг',
     processSelectSub: 'Қайд қилиш йўналишини танланг',
     shippingProcessBadge: 'Жорий жараён',
-    shippingProcessTitle: '1. Жўнатиш (Отгрузка)',
-    shippingProcessDesc: 'Саралаш девори, брак ва нуқсонли маҳсулотларни қайд қилиш',
+    shippingProcessTitle: '1. Саралаш зонаси',
+    shippingProcessDesc: 'Саралаш, донабай, жўнатиш, бракни қайд қилиш',
+    shippingHeaderBadge: 'Саралаш зонаси',
+    subModeLabel: 'Саралаш зонаси режими:',
+    subModeSorting: 'Саралаш',
+    subModeItemized: 'Донабай',
+    subModeShipping: 'Жўнатиш',
+    subModeRequired: 'Режимни танланг',
+    subModeSelected: 'Танланди',
+    subModeNotice: 'Аввал иш режимларидан бирини танланг',
+    selectSubModeFirst: 'Илтимос, аввал режимни танланг: Саралаш, Донабай ёки Жўнатиш!',
+    scanWallFirst: '«Донабай» режими учун саралаш девори рақамини сканерланг!',
+    workWallLabel: 'Саралаш девори рақами',
+    workWallPlaceholder: 'Саралаш девори рақамини сканерланг...',
+    confirmSubMode: '🎯 Зона режими:',
     inboundProcessBadge: 'Янги жараён',
     inboundProcessTitle: '2. Кирувчи оқим (Входящий поток)',
     inboundProcessDesc: 'Қайта санаш далолатномалари, яроқлилик муддати ва нуқсонлар',
@@ -405,7 +433,8 @@ const state = {
     : DEFAULT_API_URL,
   currentLang: localStorage.getItem(STORAGE_KEYS.LANG) || 'ru',
   currentUser: null,
-  currentWall: null,
+  currentWall: localStorage.getItem(STORAGE_KEYS.SORTING_WALL) || null,
+  sortingSubMode: localStorage.getItem(STORAGE_KEYS.SORTING_SUB_MODE) || null,
   currentProcess: localStorage.getItem(STORAGE_KEYS.CURRENT_PROCESS) || null,
   soundEnabled: localStorage.getItem(STORAGE_KEYS.SOUND_ENABLED) !== 'false',
   problemsList: [...PROBLEMS_CATALOG],
@@ -567,6 +596,7 @@ function setLanguage(lang) {
   // Обновление плейсхолдеров
   if (elements.employeeIdInput) elements.employeeIdInput.placeholder = t('employeeIdPlaceholder');
   if (elements.wallBarcodeInput) elements.wallBarcodeInput.placeholder = t('wallPlaceholder');
+  if (elements.workWallInput) elements.workWallInput.placeholder = t('workWallPlaceholder');
   if (elements.cargoPlaceInput) elements.cargoPlaceInput.placeholder = t('cargoPlacePlaceholder');
   if (elements.itemBarcodeInput) elements.itemBarcodeInput.placeholder = t('itemBarcodePlaceholder');
   if (elements.inboundBoxNumber) elements.inboundBoxNumber.placeholder = t('boxNumberPlaceholder');
@@ -576,8 +606,12 @@ function setLanguage(lang) {
   }
 
   // Динамические плашки
-  if (state.currentWall && elements.activeWallBadge) {
-    elements.activeWallBadge.textContent = `${t('wallPrefix')} ${state.currentWall}`;
+  if (elements.activeProcessBadge) {
+    elements.activeProcessBadge.textContent = t('shippingHeaderBadge');
+  }
+  updateActiveWallBadge();
+  if (elements.subModeStatus) {
+    elements.subModeStatus.textContent = state.sortingSubMode ? t('subModeSelected') : t('subModeRequired');
   }
   if (state.currentUser) {
     const userLabel = `${t('userPrefix')} ${state.currentUser.name || state.currentUser.id || '...'}`;
@@ -642,13 +676,32 @@ function cacheElements() {
     manualInputNotice: document.getElementById('manualInputNotice'),
     wallScanError: document.getElementById('wallScanError'),
 
-    // Work Screen (Shipping)
+    // Work Screen (Зона сортировки)
+    activeProcessBadge: document.getElementById('activeProcessBadge'),
+    activeWallBadgeContainer: document.getElementById('activeWallBadgeContainer'),
     activeWallBadge: document.getElementById('activeWallBadge'),
     changeWallBtn: document.getElementById('changeWallBtn'),
     changeProcessFromWorkBtn: document.getElementById('changeProcessFromWorkBtn'),
     workUserName: document.getElementById('workUserName'),
     workUserShift: document.getElementById('workUserShift'),
     itemRecordForm: document.getElementById('itemRecordForm'),
+
+    // Переключатели режимов и поле стены
+    subModeContainer: document.getElementById('subModeContainer'),
+    subModeLabel: document.getElementById('subModeLabel'),
+    subModeStatus: document.getElementById('subModeStatus'),
+    subModeNotice: document.getElementById('subModeNotice'),
+    subModeNoticeText: document.getElementById('subModeNoticeText'),
+    subModeSortingBtn: document.getElementById('subModeSortingBtn'),
+    subModeItemizedBtn: document.getElementById('subModeItemizedBtn'),
+    subModeShippingBtn: document.getElementById('subModeShippingBtn'),
+    subModeBtns: document.querySelectorAll('.sub-mode-btn'),
+    wallInputContainer: document.getElementById('wallInputContainer'),
+    workWallLabel: document.getElementById('workWallLabel'),
+    workWallInput: document.getElementById('workWallInput'),
+    clearWorkWall: document.getElementById('clearWorkWall'),
+    workWallError: document.getElementById('workWallError'),
+
     cargoPlaceInput: document.getElementById('cargoPlaceInput'),
     cargoPlaceStatus: document.getElementById('cargoPlaceStatus'),
     clearCargoPlace: document.getElementById('clearCargoPlace'),
@@ -697,6 +750,9 @@ function cacheElements() {
 
     // Shipping Confirm Modal
     confirmModal: document.getElementById('confirmModal'),
+    confirmSubModeRow: document.getElementById('confirmSubModeRow'),
+    confirmSubMode: document.getElementById('confirmSubMode'),
+    confirmWallRow: document.getElementById('confirmWallRow'),
     confirmWall: document.getElementById('confirmWall'),
     confirmBox: document.getElementById('confirmBox'),
     confirmBarcode: document.getElementById('confirmBarcode'),
@@ -755,11 +811,17 @@ function showScreen(screenName) {
     setTimeout(() => elements.wallBarcodeInput?.focus(), 150);
   } else if (screenName === 'work') {
     elements.workScreen.classList.add('active');
-    elements.activeWallBadge.textContent = `${t('wallPrefix')} ${state.currentWall}`;
+    if (elements.activeProcessBadge) {
+      elements.activeProcessBadge.textContent = t('shippingHeaderBadge');
+    }
+    updateActiveWallBadge();
+    initSortingSubModeUI();
     elements.workUserName.textContent = state.currentUser?.name || `ID ${state.currentUser?.id}`;
     elements.workUserShift.textContent = getLocalizedShiftName(state.currentUser?.shift);
     resetItemForm(true);
-    if (!elements.cargoPlaceInput.value.trim()) {
+    if (state.sortingSubMode === 'Потоварка' && (!elements.workWallInput || !elements.workWallInput.value.trim())) {
+      setTimeout(() => elements.workWallInput?.focus(), 150);
+    } else if (!elements.cargoPlaceInput.value.trim()) {
       setTimeout(() => elements.cargoPlaceInput?.focus(), 150);
     } else {
       setTimeout(() => elements.itemBarcodeInput?.focus(), 150);
@@ -989,12 +1051,7 @@ function checkSession() {
     if (state.currentProcess === 'inbound') {
       showScreen('inbound');
     } else if (state.currentProcess === 'shipping') {
-      if (session.wall) {
-        state.currentWall = session.wall;
-        showScreen('work');
-      } else {
-        showScreen('wall');
-      }
+      showScreen('work');
     } else {
       showScreen('process');
     }
@@ -1009,9 +1066,12 @@ function checkSession() {
 function logout() {
   localStorage.removeItem(STORAGE_KEYS.USER_SESSION);
   localStorage.removeItem(STORAGE_KEYS.CURRENT_PROCESS);
+  localStorage.removeItem(STORAGE_KEYS.SORTING_SUB_MODE);
+  localStorage.removeItem(STORAGE_KEYS.SORTING_WALL);
   state.currentUser = null;
   state.currentWall = null;
   state.currentProcess = null;
+  state.sortingSubMode = null;
   showScreen('auth');
 }
 
@@ -1179,9 +1239,224 @@ function setupWorkScreenListeners() {
   });
 
   // Смена стены
-  elements.changeWallBtn.addEventListener('click', () => {
-    showScreen('wall');
+  if (elements.changeWallBtn) {
+    elements.changeWallBtn.addEventListener('click', () => {
+      if (state.sortingSubMode === 'Потоварка' && elements.workWallInput) {
+        elements.workWallInput.focus();
+      } else {
+        showScreen('wall');
+      }
+    });
+  }
+}
+
+// ═══════════════════════════════════════════
+//  РЕЖИМЫ ЗОНЫ СОРТИРОВКИ (Сортировка, Потоварка, Отгрузка)
+// ═══════════════════════════════════════════
+function setupSortingSubModeListeners() {
+  if (elements.subModeBtns) {
+    elements.subModeBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.getAttribute('data-submode');
+        setSortingSubMode(mode, true);
+      });
+    });
+  }
+}
+
+function setSortingSubMode(mode, autoFocus = true) {
+  state.sortingSubMode = mode;
+  if (mode) {
+    localStorage.setItem(STORAGE_KEYS.SORTING_SUB_MODE, mode);
+  } else {
+    localStorage.removeItem(STORAGE_KEYS.SORTING_SUB_MODE);
+  }
+
+  // Обновляем визуальное состояние кнопок
+  if (elements.subModeBtns) {
+    elements.subModeBtns.forEach(btn => {
+      if (btn.getAttribute('data-submode') === mode) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+
+  // Обновляем статус и скрываем предупреждения
+  if (elements.subModeContainer) {
+    elements.subModeContainer.classList.remove('attention');
+  }
+  if (elements.subModeNotice) {
+    elements.subModeNotice.classList.remove('visible', 'error');
+  }
+  if (elements.subModeStatus) {
+    if (mode) {
+      elements.subModeStatus.textContent = t('subModeSelected');
+      elements.subModeStatus.classList.add('selected');
+    } else {
+      elements.subModeStatus.textContent = t('subModeRequired');
+      elements.subModeStatus.classList.remove('selected');
+    }
+  }
+
+  if (mode === 'Потоварка') {
+    // Показываем поле ввода стены
+    if (elements.wallInputContainer) {
+      elements.wallInputContainer.style.display = 'block';
+    }
+    if (elements.workWallInput) {
+      if (state.currentWall) {
+        elements.workWallInput.value = state.currentWall;
+      }
+    }
+    updateActiveWallBadge();
+
+    if (autoFocus) {
+      if (elements.workWallInput && !elements.workWallInput.value.trim()) {
+        setTimeout(() => elements.workWallInput.focus(), 100);
+      } else if (elements.cargoPlaceInput && !elements.cargoPlaceInput.value.trim()) {
+        setTimeout(() => elements.cargoPlaceInput.focus(), 100);
+      }
+    }
+  } else {
+    // Режимы Сортировка или Отгрузка
+    if (elements.wallInputContainer) {
+      elements.wallInputContainer.style.display = 'none';
+    }
+    updateActiveWallBadge();
+    clearWorkWallError();
+
+    if (autoFocus) {
+      if (elements.cargoPlaceInput && !elements.cargoPlaceInput.value.trim()) {
+        setTimeout(() => elements.cargoPlaceInput.focus(), 100);
+      } else if (elements.itemBarcodeInput) {
+        setTimeout(() => elements.itemBarcodeInput.focus(), 100);
+      }
+    }
+  }
+}
+
+function initSortingSubModeUI() {
+  if (state.sortingSubMode) {
+    setSortingSubMode(state.sortingSubMode, false);
+  } else {
+    if (elements.subModeBtns) {
+      elements.subModeBtns.forEach(btn => btn.classList.remove('active'));
+    }
+    if (elements.subModeStatus) {
+      elements.subModeStatus.textContent = t('subModeRequired');
+      elements.subModeStatus.classList.remove('selected');
+    }
+    if (elements.wallInputContainer) {
+      elements.wallInputContainer.style.display = 'none';
+    }
+    updateActiveWallBadge();
+  }
+}
+
+function updateActiveWallBadge() {
+  if (elements.activeWallBadgeContainer) {
+    if (state.sortingSubMode === 'Потоварка' && state.currentWall) {
+      elements.activeWallBadgeContainer.style.display = 'inline-flex';
+      if (elements.activeWallBadge) {
+        elements.activeWallBadge.textContent = `${t('wallPrefix')} ${state.currentWall}`;
+      }
+    } else {
+      elements.activeWallBadgeContainer.style.display = 'none';
+    }
+  }
+}
+
+function setupWorkWallInputListeners() {
+  if (!elements.workWallInput) return;
+  const input = elements.workWallInput;
+  let wallDebounceTimer = null;
+
+  input.addEventListener('input', () => {
+    input.value = autoConvertLayout(input.value).trim();
+    clearWorkWallError();
+
+    clearTimeout(wallDebounceTimer);
+    if (input.value.trim().length >= 2) {
+      wallDebounceTimer = setTimeout(() => {
+        saveWorkWallFromInput(input.value.trim());
+      }, 300);
+    }
   });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const code = input.value.trim();
+      if (!code) {
+        showWorkWallError(t('scanWallFirst'));
+        playSound('error');
+      } else {
+        saveWorkWallFromInput(code);
+        if (elements.cargoPlaceInput) elements.cargoPlaceInput.focus();
+      }
+    }
+  });
+
+  if (elements.clearWorkWall) {
+    elements.clearWorkWall.addEventListener('click', () => {
+      input.value = '';
+      state.currentWall = null;
+      localStorage.removeItem(STORAGE_KEYS.SORTING_WALL);
+      updateActiveWallBadge();
+      clearWorkWallError();
+      input.focus();
+    });
+  }
+}
+
+function saveWorkWallFromInput(rawVal) {
+  const code = autoConvertLayout(rawVal).trim();
+  if (!code) return;
+  state.currentWall = code;
+  localStorage.setItem(STORAGE_KEYS.SORTING_WALL, code);
+  updateActiveWallBadge();
+  clearWorkWallError();
+  playSound('success');
+  if (elements.cargoPlaceInput && !elements.cargoPlaceInput.value.trim()) {
+    elements.cargoPlaceInput.focus();
+  }
+}
+
+function showWorkWallError(msg) {
+  if (elements.workWallError) {
+    elements.workWallError.textContent = msg;
+    elements.workWallError.classList.add('visible');
+  }
+  if (elements.workWallInput) {
+    elements.workWallInput.classList.add('input-error');
+  }
+}
+
+function clearWorkWallError() {
+  if (elements.workWallError) {
+    elements.workWallError.classList.remove('visible');
+  }
+  if (elements.workWallInput) {
+    elements.workWallInput.classList.remove('input-error');
+  }
+}
+
+function showSubModeNotice(msg) {
+  if (elements.subModeNotice) {
+    if (elements.subModeNoticeText) elements.subModeNoticeText.textContent = msg;
+    elements.subModeNotice.classList.add('visible', 'error');
+  }
+}
+
+function highlightSubModeButtons() {
+  if (elements.subModeContainer) {
+    elements.subModeContainer.classList.add('attention');
+    setTimeout(() => {
+      elements.subModeContainer?.classList.remove('attention');
+    }, 600);
+  }
 }
 
 function updateCargoPlaceStatus(val) {
@@ -1248,6 +1523,10 @@ function resetItemForm(keepCargoPlace = true) {
   updateBarcodeCounter(0);
   clearItemBarcodeError();
   document.querySelectorAll('.problem-card-btn').forEach(b => b.classList.remove('selected'));
+  // Стена для Потоварки сохраняется между товарами
+  if (state.sortingSubMode === 'Потоварка' && state.currentWall && elements.workWallInput) {
+    elements.workWallInput.value = state.currentWall;
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -1278,6 +1557,27 @@ function renderProblemsGrid() {
 }
 
 function handleProblemSelection(prob, btnElement) {
+  // 0.1 Проверка выбора режима зоны сортировки
+  if (!state.sortingSubMode) {
+    showSubModeNotice(t('selectSubModeFirst'));
+    highlightSubModeButtons();
+    playSound('error');
+    return;
+  }
+
+  // 0.2 Проверка стены при режиме Потоварка
+  let wallCode = '';
+  if (state.sortingSubMode === 'Потоварка') {
+    wallCode = (elements.workWallInput?.value || state.currentWall || '').trim();
+    if (!wallCode) {
+      showWorkWallError(t('scanWallFirst'));
+      elements.workWallInput?.focus();
+      playSound('error');
+      return;
+    }
+    state.currentWall = wallCode;
+  }
+
   const cargoPlace = elements.cargoPlaceInput.value.trim();
   const barcode = elements.itemBarcodeInput.value.trim();
 
@@ -1312,14 +1612,23 @@ function handleProblemSelection(prob, btnElement) {
     problemRu: prob.ru,
     problemDisplay: displayName,
     qty: qty,
-    sortingWall: state.currentWall
+    subMode: state.sortingSubMode,
+    sortingWall: (state.sortingSubMode === 'Потоварка') ? wallCode : ''
   });
 }
 
 function openConfirmModal(record) {
   state.pendingRecord = record;
 
-  if (elements.confirmWall) elements.confirmWall.textContent = record.sortingWall || '—';
+  if (elements.confirmSubMode) elements.confirmSubMode.textContent = record.subMode || '—';
+  if (elements.confirmWallRow) {
+    if (record.subMode === 'Потоварка') {
+      elements.confirmWallRow.style.display = 'flex';
+      if (elements.confirmWall) elements.confirmWall.textContent = record.sortingWall || '—';
+    } else {
+      elements.confirmWallRow.style.display = 'none';
+    }
+  }
   if (elements.confirmBox) elements.confirmBox.textContent = record.cargoPlace || '—';
   if (elements.confirmBarcode) elements.confirmBarcode.textContent = record.barcode || '—';
   if (elements.confirmProblem) elements.confirmProblem.textContent = record.problemDisplay || record.problemRu || '—';
@@ -1361,7 +1670,7 @@ function submitProblemRecord(record) {
     shiftName: shiftNameRu,                  // <-- ЖЕСТКО: "День" или "Ночь"
     employeeId: state.currentUser?.id || '',
     employeeName: state.currentUser?.name || '',
-    sortingWall: record.sortingWall,
+    sortingWall: (record.subMode === 'Потоварка') ? (record.sortingWall || '') : '',
     cargoPlace: record.cargoPlace,
     barcode: record.barcode,
     description: '',                         // Колонка 9: Описание
@@ -1369,7 +1678,8 @@ function submitProblemRecord(record) {
     category2: '',                           // Колонка 11: Категория 2
     compensationPrice: '',                   // Колонка 12: Цена компенсации
     problem: record.problemRu,               // <-- ЖЕСТКО: канонический текст на русском языке!
-    qty: record.qty
+    qty: record.qty,
+    subMode: record.subMode || ''            // 15-я колонка: Зона / Режим
   };
 
   // Мгновенный оптимистичный UX: проигрываем победный звук и добавляем в историю
@@ -1408,7 +1718,8 @@ function submitProblemRecord(record) {
     category2: recordPayload.category2,
     compensationPrice: recordPayload.compensationPrice,
     problem: recordPayload.problem,
-    qty: String(recordPayload.qty)
+    qty: String(recordPayload.qty),
+    subMode: recordPayload.subMode
   });
 
   fetch(`${state.apiUrl}?${queryParams.toString()}`, { method: 'GET' })
@@ -1566,10 +1877,20 @@ function renderHistoryList() {
       ? (RU_TO_UZ_PROBLEMS_MAP[(item.problem || '').toLowerCase().trim()] || getClientTranslation(item.problem) || item.problemDisplay || item.problem)
       : (item.problem || item.problemDisplay);
 
+    let subModePill = '';
+    if (item.subMode) {
+      const pillClass = (item.subMode === 'Потоварка')
+        ? 'pill-itemized'
+        : (item.subMode === 'Отгрузка' ? 'pill-shipping' : 'pill-sorting');
+      const wallDetail = (item.subMode === 'Потоварка' && item.sortingWall) ? ` #${item.sortingWall}` : '';
+      subModePill = `<span class="history-submode-pill ${pillClass}">${item.subMode}${wallDetail}</span>`;
+    }
+
     div.innerHTML = `
       <div class="history-item-left">
         <span class="history-barcode">${item.barcode}</span>
-        <div style="display: flex; gap: 8px; font-size: 12px; align-items: center;">
+        <div style="display: flex; gap: 6px; font-size: 12px; align-items: center; flex-wrap: wrap;">
+          ${subModePill}
           ${item.cargoPlace ? `<span style="color: var(--text-secondary); font-family: var(--font-display); font-weight: 600;">📦 ${t('boxPrefix')} ${item.cargoPlace}</span>` : ''}
           <span class="history-reason">${reasonDisplay}</span>
         </div>
@@ -2406,11 +2727,7 @@ function setupProcessSelectListeners() {
     elements.selectShippingBtn.addEventListener('click', () => {
       state.currentProcess = 'shipping';
       localStorage.setItem(STORAGE_KEYS.CURRENT_PROCESS, 'shipping');
-      if (state.currentWall) {
-        showScreen('work');
-      } else {
-        showScreen('wall');
-      }
+      showScreen('work');
     });
   }
 
@@ -2678,8 +2995,10 @@ function setupEventListeners() {
   // Сканер стены
   setupWallScannerListener();
 
-  // Рабочий экран отгрузки
+  // Рабочий экран отгрузки / зоны сортировки
   setupWorkScreenListeners();
+  setupSortingSubModeListeners();
+  setupWorkWallInputListeners();
 
   // Рабочий экран входящего потока
   setupInboundListeners();
@@ -2804,11 +3123,18 @@ function setupEventListeners() {
         elements.wallBarcodeInput.focus();
       }
     }
-    // 2. Рабочий экран фиксации отгрузки
+    // 2. Рабочий экран фиксации зоны сортировки
     else if (elements.workScreen && elements.workScreen.classList.contains('active')) {
-      const isInput = (activeEl === elements.cargoPlaceInput || activeEl === elements.itemBarcodeInput || activeEl === elements.qtyInput);
+      const isInput = (
+        activeEl === elements.workWallInput ||
+        activeEl === elements.cargoPlaceInput ||
+        activeEl === elements.itemBarcodeInput ||
+        activeEl === elements.qtyInput
+      );
       if (!isInput) {
-        if (!elements.cargoPlaceInput.value.trim()) {
+        if (state.sortingSubMode === 'Потоварка' && elements.workWallInput && !elements.workWallInput.value.trim()) {
+          elements.workWallInput.focus();
+        } else if (!elements.cargoPlaceInput.value.trim()) {
           elements.cargoPlaceInput.focus();
         } else {
           elements.itemBarcodeInput.focus();

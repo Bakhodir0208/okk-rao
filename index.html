@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ОКК - РАО | Стена сортировки</title>
+  <title>ОКК - РАО | Зона сортировки</title>
 
   <!-- Google Fonts: Outfit & Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -115,15 +115,15 @@
           </header>
 
           <div class="process-cards-grid">
-            <!-- Блок 1: Отгрузка (Стена сортировки) -->
+            <!-- Блок 1: Зона сортировки -->
             <button type="button" class="process-choice-card" id="selectShippingBtn">
               <div class="process-card-icon-wrap shipping-glow">
                 <span class="process-card-icon">🧱</span>
               </div>
               <div class="process-card-content">
                 <div class="process-card-tag" data-i18n="shippingProcessBadge">Текущий процесс</div>
-                <h3 class="process-card-title" data-i18n="shippingProcessTitle">1. Отгрузка</h3>
-                <p class="process-card-desc" data-i18n="shippingProcessDesc">Стена сортировки, фиксация брака и поврежденных товаров</p>
+                <h3 class="process-card-title" data-i18n="shippingProcessTitle">1. Зона сортировки</h3>
+                <p class="process-card-desc" data-i18n="shippingProcessDesc">Сортировка, потоварка, отгрузка, фиксация брака</p>
               </div>
               <span class="process-card-arrow">➜</span>
             </button>
@@ -197,16 +197,17 @@
     <section id="workScreen" class="screen" aria-labelledby="workScreenHeading">
       <div class="card work-card">
 
-        <!-- Шапка: активная стена + смена стены + инфо о сотруднике -->
+        <!-- Шапка: активный процесс / стена + смена процесса + инфо о сотруднике -->
         <header class="work-header">
           <div class="wall-badge-wrapper">
-            <div class="wall-chip">
+            <div class="wall-chip process-mode-chip">
               <span class="wall-icon">🧱</span>
-              <span id="activeWallBadge" class="wall-text">Стена: ...</span>
+              <span id="activeProcessBadge" class="wall-text" data-i18n="shippingHeaderBadge">Зона сортировки</span>
             </div>
-            <button id="changeWallBtn" class="btn-change-wall" type="button" title="Перейти к другой стене сортировки">
-              <span>🔄</span> <span id="changeWallBtnText" data-i18n="changeWall">Сменить стену</span>
-            </button>
+            <div class="wall-chip wall-num-chip" id="activeWallBadgeContainer" style="display: none;">
+              <span class="wall-icon">🎯</span>
+              <span id="activeWallBadge" class="wall-text">Стена: —</span>
+            </div>
             <button id="changeProcessFromWorkBtn" class="btn-change-wall" type="button" title="К выбору направления">
               <span>📋</span> <span data-i18n="changeProcess">Сменить процесс</span>
             </button>
@@ -219,6 +220,50 @@
 
         <!-- Форма фиксации товара -->
         <form id="itemRecordForm" novalidate>
+
+          <!-- БЛОК 3 ПЕРЕКЛЮЧАТЕЛЕЙ: Сортировка, Потоварка, Отгрузка -->
+          <div class="sub-mode-container" id="subModeContainer">
+            <div class="sub-mode-header">
+              <label class="sub-mode-label" id="subModeLabel" data-i18n="subModeLabel">Режим зоны сортировки:</label>
+              <span class="sub-mode-status" id="subModeStatus" data-i18n="subModeRequired">Выберите режим</span>
+            </div>
+            <div class="sub-mode-toggle-group" role="group" aria-label="Режим работы зоны сортировки">
+              <button type="button" class="sub-mode-btn" data-submode="Сортировка" id="subModeSortingBtn">
+                <span class="mode-icon">🔄</span>
+                <span class="mode-text" data-i18n="subModeSorting">Сортировка</span>
+              </button>
+              <button type="button" class="sub-mode-btn" data-submode="Потоварка" id="subModeItemizedBtn">
+                <span class="mode-icon">🧱</span>
+                <span class="mode-text" data-i18n="subModeItemized">Потоварка</span>
+              </button>
+              <button type="button" class="sub-mode-btn" data-submode="Отгрузка" id="subModeShippingBtn">
+                <span class="mode-icon">🚚</span>
+                <span class="mode-text" data-i18n="subModeShipping">Отгрузка</span>
+              </button>
+            </div>
+            <div id="subModeNotice" class="sub-mode-notice">
+              <span>⚡</span> <span id="subModeNoticeText" data-i18n="subModeNotice">Сначала выберите один из режимов</span>
+            </div>
+          </div>
+
+          <!-- Поле: Номер стены сортировки (появляется только для Потоварки) -->
+          <div class="barcode-input-container" id="wallInputContainer" style="display: none;">
+            <div class="barcode-header">
+              <label for="workWallInput" id="workWallLabel" data-i18n="workWallLabel">Номер стены сортировки</label>
+              <span class="scanner-tag">⚡ Сканируйте ШК стены</span>
+            </div>
+            <div class="input-wrapper">
+              <input
+                type="text"
+                id="workWallInput"
+                class="barcode-input-field"
+                placeholder="Отсканируйте номер стены сортировки..."
+                autocomplete="off"
+              >
+              <button type="button" class="clear-btn" id="clearWorkWall" aria-label="Очистить стену">&times;</button>
+            </div>
+            <div id="workWallError" class="error-text"></div>
+          </div>
 
           <!-- Поле: ШК Короба -->
           <div class="barcode-input-container">
@@ -453,7 +498,11 @@
       <p data-i18n="confirmDesc" style="margin-bottom: 16px;">Пожалуйста, проверьте правильность данных перед отправкой:</p>
 
       <div class="confirm-summary">
-        <div class="confirm-row">
+        <div class="confirm-row" id="confirmSubModeRow">
+          <span class="confirm-label" data-i18n="confirmSubMode">🎯 Зона / Режим:</span>
+          <span id="confirmSubMode" class="confirm-value">—</span>
+        </div>
+        <div class="confirm-row" id="confirmWallRow">
           <span class="confirm-label" data-i18n="confirmWall">🧱 Стена сортировки:</span>
           <span id="confirmWall" class="confirm-value">—</span>
         </div>

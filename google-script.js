@@ -153,6 +153,7 @@ function handleRequest(e) {
     // 3. ДОБАВЛЕНИЕ ОДНОЙ ЗАПИСИ ИЛИ ПАКЕТА (ОФЛАЙН ОЧЕРЕДЬ) С ДЕДУПЛИКАЦИЕЙ
     } else if (action === "addRecord" || action === "addRecords") {
       var logSheet = ss.getSheetByName("Log");
+      ensureLogHeaders(logSheet);
       var cache = CacheService.getScriptCache();
       var empMap = getEmployeeMap(ss);
 
@@ -184,6 +185,8 @@ function handleRequest(e) {
           var recCargo = String(rec.cargoPlace || parameter.cargoPlace || "").trim();
           var recBarcode = String(rec.barcode || "").trim();
           var recProb = rec.problem || "";
+          var subMode = String(rec.subMode || parameter.subMode || "").trim();
+          var wallVal = (subMode === "Потоварка") ? String(rec.sortingWall || parameter.sortingWall || "").trim() : "";
 
           // 2. Проверка недавнего дубликата в листе Log
           if (isRecentDuplicate(logSheet, recDate, recEmpId, recCargo, recBarcode, recProb, recTime)) {
@@ -203,7 +206,7 @@ function handleRequest(e) {
             rec.shiftName || (officialEmp && officialEmp.shift) || rec.dayNight || dayNight,
             recEmpId,
             finalEmpName,
-            rec.sortingWall || parameter.sortingWall || "",
+            wallVal,
             recCargo,
             recBarcode,
             rec.description || "",
@@ -211,7 +214,8 @@ function handleRequest(e) {
             rec.category2 || "",
             rec.compensationPrice || "",
             recProb,
-            Number(rec.qty || 1)
+            Number(rec.qty || 1),
+            subMode
           ]);
 
           if (rId) processedIds.push(rId);
@@ -219,7 +223,7 @@ function handleRequest(e) {
 
         if (rows.length > 0) {
           var lastRow = logSheet.getLastRow();
-          logSheet.getRange(lastRow + 1, 1, rows.length, 14).setValues(rows);
+          logSheet.getRange(lastRow + 1, 1, rows.length, 15).setValues(rows);
 
           // Сохраняем в кэш все записанные ID
           for (var p = 0; p < processedIds.length; p++) {
@@ -266,13 +270,16 @@ function handleRequest(e) {
               ? officialEmp.name
               : (parameter.employeeName || "");
 
+            var subMode = String(parameter.subMode || "").trim();
+            var wallVal = (subMode === "Потоварка") ? String(parameter.sortingWall || "").trim() : "";
+
             var newRow = [
               opDate,
               opTime,
               parameter.shiftName || (officialEmp && officialEmp.shift) || dayNight,
               empId,
               finalEmpName,
-              parameter.sortingWall || "",
+              wallVal,
               cargo,
               barcode,
               parameter.description || "",
@@ -280,11 +287,12 @@ function handleRequest(e) {
               parameter.category2 || "",
               parameter.compensationPrice || "",
               problem,
-              Number(parameter.qty || 1)
+              Number(parameter.qty || 1),
+              subMode
             ];
 
             var lastRow = logSheet.getLastRow();
-            logSheet.getRange(lastRow + 1, 1, 1, 14).setValues([newRow]);
+            logSheet.getRange(lastRow + 1, 1, 1, 15).setValues([newRow]);
 
             if (clientRecordId) {
               cache.put("rec_" + clientRecordId, "1", 21600);
@@ -907,6 +915,23 @@ function autoSetupIfNeeded(ss) {
 
   if (!empSheet || !configSheet || !logSheet || !inboundSheet || inboundSheet.getLastRow() === 0 || needsConfigInbound) {
     setupSheet();
+  } else if (logSheet && logSheet.getLastColumn() < 15) {
+    ensureLogHeaders(logSheet);
+  }
+}
+
+// Проверка и добавление 15-й колонки "Зона / Режим" в существующий лист Log
+function ensureLogHeaders(logSheet) {
+  if (!logSheet) return;
+  var lastCol = logSheet.getLastColumn();
+  if (lastCol < 15) {
+    try {
+      logSheet.getRange(1, 15).setValue("Зона / Режим")
+        .setBackground("#7000ff")
+        .setFontColor("#ffffff")
+        .setFontWeight("bold");
+      logSheet.autoResizeColumn(15);
+    } catch (e) {}
   }
 }
 
@@ -1006,7 +1031,7 @@ function setupSheet() {
     }
   }
 
-  // 3. Лист Log (14 утвержденных колонок для Отгрузки)
+  // 3. Лист Log (15 утвержденных колонок для Зоны сортировки)
   var logSheet = ss.getSheetByName("Log");
   if (!logSheet) {
     logSheet = ss.insertSheet("Log");
@@ -1024,14 +1049,17 @@ function setupSheet() {
       "Категория 2",
       "Цена компенсации",
       "Причина проблемы",
-      "Количество"
+      "Количество",
+      "Зона / Режим"
     ]);
 
-    logSheet.getRange("A1:N1")
+    logSheet.getRange("A1:O1")
       .setBackground("#7000ff")
       .setFontColor("#ffffff")
       .setFontWeight("bold");
-    logSheet.autoResizeColumns(1, 14);
+    logSheet.autoResizeColumns(1, 15);
+  } else {
+    ensureLogHeaders(logSheet);
   }
 
   // 4. Лист Фиксация входящего потока NEW (16 утвержденных колонок)

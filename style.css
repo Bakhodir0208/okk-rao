@@ -652,6 +652,188 @@ body {
   text-align: right;
 }
 
+/* Переключатель режимов Зоны Сортировки */
+.sub-mode-container {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(112, 0, 255, 0.2);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: var(--transition-normal);
+}
+
+.sub-mode-container.attention {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 16px rgba(255, 190, 26, 0.25);
+  animation: subModeShake 0.45s ease-in-out;
+}
+
+@keyframes subModeShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+.sub-mode-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.sub-mode-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sub-mode-status {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 159, 10, 0.15);
+  color: var(--warning-color);
+  border: 1px solid rgba(255, 159, 10, 0.3);
+  transition: var(--transition-fast);
+}
+
+.sub-mode-status.selected {
+  background: rgba(0, 230, 118, 0.15);
+  color: var(--success-color);
+  border-color: rgba(0, 230, 118, 0.3);
+}
+
+.sub-mode-toggle-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.sub-mode-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid rgba(112, 0, 255, 0.22);
+  border-radius: var(--radius-sm);
+  padding: 12px 10px;
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.sub-mode-btn .mode-icon {
+  font-size: 18px;
+  transition: transform 0.2s ease;
+}
+
+.sub-mode-btn:hover {
+  background: rgba(112, 0, 255, 0.14);
+  border-color: rgba(112, 0, 255, 0.45);
+  color: var(--text-primary);
+  transform: translateY(-2px);
+}
+
+.sub-mode-btn:hover .mode-icon {
+  transform: scale(1.15);
+}
+
+.sub-mode-btn.active {
+  background: linear-gradient(135deg, rgba(112, 0, 255, 0.4) 0%, rgba(255, 190, 26, 0.25) 100%);
+  border-color: var(--accent-color);
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(255, 190, 26, 0.28), inset 0 0 10px rgba(112, 0, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.sub-mode-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 3px;
+  background: var(--accent-color);
+  border-radius: 3px 3px 0 0;
+  box-shadow: 0 0 8px var(--accent-color);
+}
+
+.sub-mode-notice {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--warning-color);
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: rgba(255, 159, 10, 0.1);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 159, 10, 0.25);
+}
+
+.sub-mode-notice.visible {
+  display: flex;
+}
+
+.sub-mode-notice.error {
+  color: var(--error-color);
+  background: rgba(255, 51, 102, 0.12);
+  border-color: rgba(255, 51, 102, 0.3);
+}
+
+.scanner-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-color);
+  background: rgba(255, 190, 26, 0.12);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 190, 26, 0.25);
+}
+
+.history-submode-pill {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.pill-sorting {
+  background: rgba(112, 0, 255, 0.22);
+  color: #c79eff;
+  border: 1px solid rgba(112, 0, 255, 0.4);
+}
+
+.pill-itemized {
+  background: rgba(255, 190, 26, 0.18);
+  color: #ffbe1a;
+  border: 1px solid rgba(255, 190, 26, 0.4);
+}
+
+.pill-shipping {
+  background: rgba(0, 230, 118, 0.18);
+  color: #00e676;
+  border: 1px solid rgba(0, 230, 118, 0.4);
+}
+
 /* Поле ШК Товара */
 .barcode-input-container {
   margin-bottom: 18px;
