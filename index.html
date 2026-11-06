@@ -122,7 +122,7 @@
               </div>
               <div class="process-card-content">
                 <h3 class="process-card-title" data-i18n="shippingProcessTitle">1. Зона сортировки</h3>
-                <p class="process-card-desc" data-i18n="shippingProcessDesc">Сортировка, потоварка, отгрузка, фиксация брака</p>
+                <p class="process-card-desc" data-i18n="shippingProcessDesc">Потоварка, отгрузка, фиксация брака</p>
               </div>
               <span class="process-card-arrow">➜</span>
             </button>
@@ -219,24 +219,28 @@
         <!-- Форма фиксации товара -->
         <form id="itemRecordForm" novalidate>
 
-          <!-- БЛОК 3 ПЕРЕКЛЮЧАТЕЛЕЙ: Сортировка, Потоварка, Отгрузка -->
+          <!-- БЛОК 4 ПЕРЕКЛЮЧАТЕЛЕЙ ЗОНЫ РАБОТЫ -->
           <div class="sub-mode-container" id="subModeContainer">
             <div class="sub-mode-header">
               <label class="sub-mode-label" id="subModeLabel" data-i18n="subModeLabel">Зона работы:</label>
               <span class="sub-mode-status" id="subModeStatus" data-i18n="subModeRequired">Выберите режим</span>
             </div>
             <div class="sub-mode-toggle-group" role="group" aria-label="Зона работы">
-              <button type="button" class="sub-mode-btn" data-submode="Сортировка" id="subModeSortingBtn">
-                <span class="mode-icon">🔄</span>
-                <span class="mode-text" data-i18n="subModeSorting">Сортировка</span>
-              </button>
-              <button type="button" class="sub-mode-btn" data-submode="Потоварка" id="subModeItemizedBtn">
+              <button type="button" class="sub-mode-btn" data-submode="Потоварка до сортировки">
                 <span class="mode-icon">🧱</span>
-                <span class="mode-text" data-i18n="subModeItemized">Потоварка</span>
+                <span class="mode-text" data-i18n="subModeItemizedBefore">Потоварка до сортировки</span>
               </button>
-              <button type="button" class="sub-mode-btn" data-submode="Отгрузка" id="subModeShippingBtn">
+              <button type="button" class="sub-mode-btn" data-submode="Потоварка после сортировки">
+                <span class="mode-icon">🔄</span>
+                <span class="mode-text" data-i18n="subModeItemizedAfter">Потоварка после сортировки</span>
+              </button>
+              <button type="button" class="sub-mode-btn" data-submode="Отгрузка скрутка">
+                <span class="mode-icon">🌀</span>
+                <span class="mode-text" data-i18n="subModeShippingWrap">Отгрузка скрутка</span>
+              </button>
+              <button type="button" class="sub-mode-btn" data-submode="Отгрузка в машину">
                 <span class="mode-icon">🚚</span>
-                <span class="mode-text" data-i18n="subModeShipping">Отгрузка</span>
+                <span class="mode-text" data-i18n="subModeShippingCar">Отгрузка в машину</span>
               </button>
             </div>
             <div id="subModeNotice" class="sub-mode-notice">

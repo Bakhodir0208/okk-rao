@@ -22,6 +22,17 @@ const STORAGE_KEYS = {
   SORTING_WALL: 'okk_rao_sorting_wall'
 };
 
+// Режимы зоны работы (значения уходят в таблицу как есть)
+const SUB_MODES = [
+  'Потоварка до сортировки',
+  'Потоварка после сортировки',
+  'Отгрузка скрутка',
+  'Отгрузка в машину'
+];
+// Режимы, где обязателен номер стены сортировки
+const WALL_MODES = ['Потоварка до сортировки', 'Потоварка после сортировки'];
+function isWallMode(mode) { return WALL_MODES.includes(mode); }
+
 // Каталог причин проблем для Отгрузки (Log)
 const PROBLEMS_CATALOG = [
   { ru: 'Протечка жидкости', uz: 'Суюқлик оқиши', icon: '💧' },
@@ -147,16 +158,17 @@ const I18N = {
     processSelectSub: 'Выберите направление для фиксации позиций',
     shippingProcessBadge: 'Текущий процесс',
     shippingProcessTitle: '1. Зона сортировки',
-    shippingProcessDesc: 'Сортировка, потоварка, отгрузка, фиксация брака',
+    shippingProcessDesc: 'Потоварка, отгрузка, фиксация брака',
     shippingHeaderBadge: 'Зона сортировки',
     subModeLabel: 'Зона работы:',
-    subModeSorting: 'Сортировка',
-    subModeItemized: 'Потоварка',
-    subModeShipping: 'Отгрузка',
+    subModeItemizedBefore: 'Потоварка до сортировки',
+    subModeItemizedAfter: 'Потоварка после сортировки',
+    subModeShippingWrap: 'Отгрузка скрутка',
+    subModeShippingCar: 'Отгрузка в машину',
     subModeRequired: 'Выберите режим',
     subModeSelected: 'Выбрано',
     subModeNotice: 'Сначала выберите один из режимов',
-    selectSubModeFirst: 'Пожалуйста, сначала выберите режим: Сортировка, Потоварка или Отгрузка!',
+    selectSubModeFirst: 'Пожалуйста, сначала выберите режим зоны работы!',
     scanWallFirst: 'Для режима «Потоварка» отсканируйте номер стены сортировки!',
     workWallLabel: 'Номер стены сортировки',
     workWallPlaceholder: 'Отсканируйте номер стены сортировки...',
@@ -262,16 +274,17 @@ const I18N = {
     processSelectSub: 'Қайд қилиш йўналишини танланг',
     shippingProcessBadge: 'Жорий жараён',
     shippingProcessTitle: '1. Саралаш зонаси',
-    shippingProcessDesc: 'Саралаш, донабай, жўнатиш, бракни қайд қилиш',
+    shippingProcessDesc: 'Донабай, жўнатиш, бракни қайд қилиш',
     shippingHeaderBadge: 'Саралаш зонаси',
     subModeLabel: 'Иш зонаси:',
-    subModeSorting: 'Саралаш',
-    subModeItemized: 'Донабай',
-    subModeShipping: 'Жўнатиш',
+    subModeItemizedBefore: 'Донабай саралашдан олдин',
+    subModeItemizedAfter: 'Донабай саралашдан кейин',
+    subModeShippingWrap: 'Жўнатиш: ўраш',
+    subModeShippingCar: 'Жўнатиш: машинага',
     subModeRequired: 'Режимни танланг',
     subModeSelected: 'Танланди',
     subModeNotice: 'Аввал иш режимларидан бирини танланг',
-    selectSubModeFirst: 'Илтимос, аввал режимни танланг: Саралаш, Донабай ёки Жўнатиш!',
+    selectSubModeFirst: 'Илтимос, аввал иш зонаси режимини танланг!',
     scanWallFirst: '«Донабай» режими учун саралаш девори рақамини сканерланг!',
     workWallLabel: 'Саралаш девори рақами',
     workWallPlaceholder: 'Саралаш девори рақамини сканерланг...',
@@ -434,7 +447,7 @@ const state = {
   currentLang: localStorage.getItem(STORAGE_KEYS.LANG) || 'ru',
   currentUser: null,
   currentWall: localStorage.getItem(STORAGE_KEYS.SORTING_WALL) || null,
-  sortingSubMode: localStorage.getItem(STORAGE_KEYS.SORTING_SUB_MODE) || null,
+  sortingSubMode: (SUB_MODES.includes(localStorage.getItem(STORAGE_KEYS.SORTING_SUB_MODE)) ? localStorage.getItem(STORAGE_KEYS.SORTING_SUB_MODE) : null),
   currentProcess: localStorage.getItem(STORAGE_KEYS.CURRENT_PROCESS) || null,
   soundEnabled: localStorage.getItem(STORAGE_KEYS.SOUND_ENABLED) !== 'false',
   problemsList: [...PROBLEMS_CATALOG],
@@ -692,9 +705,6 @@ function cacheElements() {
     subModeStatus: document.getElementById('subModeStatus'),
     subModeNotice: document.getElementById('subModeNotice'),
     subModeNoticeText: document.getElementById('subModeNoticeText'),
-    subModeSortingBtn: document.getElementById('subModeSortingBtn'),
-    subModeItemizedBtn: document.getElementById('subModeItemizedBtn'),
-    subModeShippingBtn: document.getElementById('subModeShippingBtn'),
     subModeBtns: document.querySelectorAll('.sub-mode-btn'),
     wallInputContainer: document.getElementById('wallInputContainer'),
     workWallLabel: document.getElementById('workWallLabel'),
@@ -819,7 +829,7 @@ function showScreen(screenName) {
     elements.workUserName.textContent = state.currentUser?.name || `ID ${state.currentUser?.id}`;
     elements.workUserShift.textContent = getLocalizedShiftName(state.currentUser?.shift);
     resetItemForm(true);
-    if (state.sortingSubMode === 'Потоварка' && (!elements.workWallInput || !elements.workWallInput.value.trim())) {
+    if (isWallMode(state.sortingSubMode) && (!elements.workWallInput || !elements.workWallInput.value.trim())) {
       setTimeout(() => elements.workWallInput?.focus(), 150);
     } else if (!elements.cargoPlaceInput.value.trim()) {
       setTimeout(() => elements.cargoPlaceInput?.focus(), 150);
@@ -1241,7 +1251,7 @@ function setupWorkScreenListeners() {
   // Смена стены
   if (elements.changeWallBtn) {
     elements.changeWallBtn.addEventListener('click', () => {
-      if (state.sortingSubMode === 'Потоварка' && elements.workWallInput) {
+      if (isWallMode(state.sortingSubMode) && elements.workWallInput) {
         elements.workWallInput.focus();
       } else {
         showScreen('wall');
@@ -1251,7 +1261,7 @@ function setupWorkScreenListeners() {
 }
 
 // ═══════════════════════════════════════════
-//  РЕЖИМЫ ЗОНЫ СОРТИРОВКИ (Сортировка, Потоварка, Отгрузка)
+//  РЕЖИМЫ ЗОНЫ СОРТИРОВКИ (см. SUB_MODES)
 // ═══════════════════════════════════════════
 function setupSortingSubModeListeners() {
   if (elements.subModeBtns) {
@@ -1300,7 +1310,7 @@ function setSortingSubMode(mode, autoFocus = true) {
     }
   }
 
-  if (mode === 'Потоварка') {
+  if (isWallMode(mode)) {
     // Показываем поле ввода стены
     if (elements.wallInputContainer) {
       elements.wallInputContainer.style.display = 'block';
@@ -1357,7 +1367,7 @@ function initSortingSubModeUI() {
 
 function updateActiveWallBadge() {
   if (elements.activeWallBadgeContainer) {
-    if (state.sortingSubMode === 'Потоварка' && state.currentWall) {
+    if (isWallMode(state.sortingSubMode) && state.currentWall) {
       elements.activeWallBadgeContainer.style.display = 'inline-flex';
       if (elements.activeWallBadge) {
         elements.activeWallBadge.textContent = `${t('wallPrefix')} ${state.currentWall}`;
@@ -1524,7 +1534,7 @@ function resetItemForm(keepCargoPlace = true) {
   clearItemBarcodeError();
   document.querySelectorAll('.problem-card-btn').forEach(b => b.classList.remove('selected'));
   // Стена для Потоварки сохраняется между товарами
-  if (state.sortingSubMode === 'Потоварка' && state.currentWall && elements.workWallInput) {
+  if (isWallMode(state.sortingSubMode) && state.currentWall && elements.workWallInput) {
     elements.workWallInput.value = state.currentWall;
   }
 }
@@ -1567,7 +1577,7 @@ function handleProblemSelection(prob, btnElement) {
 
   // 0.2 Проверка стены при режиме Потоварка
   let wallCode = '';
-  if (state.sortingSubMode === 'Потоварка') {
+  if (isWallMode(state.sortingSubMode)) {
     wallCode = (elements.workWallInput?.value || state.currentWall || '').trim();
     if (!wallCode) {
       showWorkWallError(t('scanWallFirst'));
@@ -1613,7 +1623,7 @@ function handleProblemSelection(prob, btnElement) {
     problemDisplay: displayName,
     qty: qty,
     subMode: state.sortingSubMode,
-    sortingWall: (state.sortingSubMode === 'Потоварка') ? wallCode : ''
+    sortingWall: (isWallMode(state.sortingSubMode)) ? wallCode : ''
   });
 }
 
@@ -1622,7 +1632,7 @@ function openConfirmModal(record) {
 
   if (elements.confirmSubMode) elements.confirmSubMode.textContent = record.subMode || '—';
   if (elements.confirmWallRow) {
-    if (record.subMode === 'Потоварка') {
+    if (isWallMode(record.subMode)) {
       elements.confirmWallRow.style.display = 'flex';
       if (elements.confirmWall) elements.confirmWall.textContent = record.sortingWall || '—';
     } else {
@@ -1670,7 +1680,7 @@ function submitProblemRecord(record) {
     shiftName: shiftNameRu,                  // <-- ЖЕСТКО: "День" или "Ночь"
     employeeId: state.currentUser?.id || '',
     employeeName: state.currentUser?.name || '',
-    sortingWall: (record.subMode === 'Потоварка') ? (record.sortingWall || '') : '',
+    sortingWall: (isWallMode(record.subMode)) ? (record.sortingWall || '') : '',
     cargoPlace: record.cargoPlace,
     barcode: record.barcode,
     description: '',                         // Колонка 9: Описание
@@ -1879,10 +1889,10 @@ function renderHistoryList() {
 
     let subModePill = '';
     if (item.subMode) {
-      const pillClass = (item.subMode === 'Потоварка')
+      const pillClass = (isWallMode(item.subMode))
         ? 'pill-itemized'
-        : (item.subMode === 'Отгрузка' ? 'pill-shipping' : 'pill-sorting');
-      const wallDetail = (item.subMode === 'Потоварка' && item.sortingWall) ? ` #${item.sortingWall}` : '';
+        : (String(item.subMode).startsWith('Отгрузка') ? 'pill-shipping' : 'pill-sorting');
+      const wallDetail = (isWallMode(item.subMode) && item.sortingWall) ? ` #${item.sortingWall}` : '';
       subModePill = `<span class="history-submode-pill ${pillClass}">${item.subMode}${wallDetail}</span>`;
     }
 
@@ -3132,7 +3142,7 @@ function setupEventListeners() {
         activeEl === elements.qtyInput
       );
       if (!isInput) {
-        if (state.sortingSubMode === 'Потоварка' && elements.workWallInput && !elements.workWallInput.value.trim()) {
+        if (isWallMode(state.sortingSubMode) && elements.workWallInput && !elements.workWallInput.value.trim()) {
           elements.workWallInput.focus();
         } else if (!elements.cargoPlaceInput.value.trim()) {
           elements.cargoPlaceInput.focus();

@@ -186,7 +186,7 @@ function handleRequest(e) {
           var recBarcode = String(rec.barcode || "").trim();
           var recProb = rec.problem || "";
           var subMode = String(rec.subMode || parameter.subMode || "").trim();
-          var wallVal = (subMode === "Потоварка") ? String(rec.sortingWall || parameter.sortingWall || "").trim() : "";
+          var wallVal = (subMode.indexOf("Потоварка") === 0) ? String(rec.sortingWall || parameter.sortingWall || "").trim() : "";
 
           // 2. Проверка недавнего дубликата в листе Log
           if (isRecentDuplicate(logSheet, recDate, recEmpId, recCargo, recBarcode, recProb, recTime)) {
@@ -271,7 +271,7 @@ function handleRequest(e) {
               : (parameter.employeeName || "");
 
             var subMode = String(parameter.subMode || "").trim();
-            var wallVal = (subMode === "Потоварка") ? String(parameter.sortingWall || "").trim() : "";
+            var wallVal = (subMode.indexOf("Потоварка") === 0) ? String(parameter.sortingWall || "").trim() : "";
 
             var newRow = [
               opDate,

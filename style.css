@@ -710,7 +710,7 @@ body {
 
 .sub-mode-toggle-group {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
 }
 
@@ -732,6 +732,11 @@ body {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+}
+
+.sub-mode-btn .mode-text {
+  text-align: center;
+  line-height: 1.25;
 }
 
 .sub-mode-btn .mode-icon {
